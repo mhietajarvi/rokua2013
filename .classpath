@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
+	<classpathentry kind="lib" path="log4j/log4j-api-2.0-beta9.jar"/>
+	<classpathentry kind="lib" path="log4j/log4j-core-2.0-beta9.jar"/>
+	<classpathentry kind="lib" path="lwjgl-2.9.0/jar/lwjgl_util.jar" sourcepath="lwjgl-2.9.0/src/java"/>
+	<classpathentry kind="lib" path="lwjgl-2.9.0/jar/lwjgl.jar" sourcepath="lwjgl-2.9.0/src/">
+		<attributes>
+			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="rr/lwjgl-2.9.0/native/macosx"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="PNGDecoder.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
