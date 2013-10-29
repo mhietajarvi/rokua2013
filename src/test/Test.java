@@ -1,26 +1,16 @@
 package test;
 
-import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL12.*;
-import static org.lwjgl.opengl.GL13.*;
-import static org.lwjgl.opengl.GL14.*;
-import static org.lwjgl.opengl.GL15.*;
-import static org.lwjgl.opengl.GL20.*;
-import static org.lwjgl.opengl.GL21.*;
-import static org.lwjgl.opengl.GL30.*;
-import static org.lwjgl.opengl.GL31.*;
-import static org.lwjgl.opengl.GL32.*;
+import static org.lwjgl.opengl.GL11.GL_NO_ERROR;
+import static org.lwjgl.opengl.GL11.GL_VERSION;
+import static org.lwjgl.opengl.GL11.glGetError;
+import static org.lwjgl.opengl.GL11.glGetString;
+import static org.lwjgl.opengl.GL11.glViewport;
 
-import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.LWJGLException;
-import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.ContextAttribs;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
@@ -29,8 +19,6 @@ import org.lwjgl.util.glu.GLU;
 
 public class Test {
 
-	private static Logger LOG = LogManager.getLogger(Test.class.getName());
-	
 	static FloatBuffer floatBuffer(float... data) {
 		FloatBuffer buf = BufferUtils.createFloatBuffer(data.length);
 		buf.put(data);
@@ -94,7 +82,7 @@ public class Test {
 //		LOG.warn("warn");
 //		LOG.error("error");
 		//LogManager.
-        LOG.error("asdf {}", "hello");
+        Log.e("asdf %s", "hello");
         
 
         int t = 0;

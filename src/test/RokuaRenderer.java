@@ -11,8 +11,6 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.MemoryUtil;
 import org.lwjgl.util.vector.Matrix4f;
@@ -53,8 +51,6 @@ import android.opengl.Matrix;
 
 class RokuaRenderer {
 
-	private static Logger LOG = LogManager.getLogger(RokuaRenderer.class.getName());
-	
     static String read(String file) throws IOException {
     	return new String(Files.readAllBytes(Paths.get(file)), Charset.forName("UTF-8"));
     }
@@ -117,7 +113,7 @@ class RokuaRenderer {
 	        glShaderSource(shader, shaderCode);
 	        glCompileShader(shader);
 	        
-	        LOG.error(glGetShaderInfoLog(shader, 10000));
+	        Log.d(glGetShaderInfoLog(shader, 10000));
 	        return shader;
 	    }
 	    
@@ -147,7 +143,7 @@ class RokuaRenderer {
 	        hPosition = glGetAttribLocation(program, "a_Position");
 	        hColor = glGetAttribLocation(program, "a_Color");
 	        hNormal = glGetAttribLocation(program, "a_Normal");
-	        LOG.error(""+hMVPMatrix+" "+hMVMatrix+" "+hLightPos+" "+hPosition+" "+hColor+" "+hNormal);
+	        Log.d(""+hMVPMatrix+" "+hMVMatrix+" "+hLightPos+" "+hPosition+" "+hColor+" "+hNormal);
 	    }
 	    
 	    private void drawSetupP(RenderState state, FloatBuffer position) {
@@ -174,7 +170,7 @@ class RokuaRenderer {
 //	        glUniformMatrix4fv(hMVPMatrix, 1, false, state.mMVPMatrix, 0);
 	    	Test.exitOnGLError("c");
 
-	   ILMEISESTI JOSKUS ON VOINUT PASSATA SUORAAN POINTERIN, NYKYÄÄN VAIN OFFSETIN BINDATTUUN BUFFERIIN...
+	   // ILMEISESTI JOSKUS ON VOINUT PASSATA SUORAAN POINTERIN, NYKYÄÄN VAIN OFFSETIN BINDATTUUN BUFFERIIN...
 	    	System.out.println("address: " +MemoryUtil.getAddress(position));
 	    	
 	    	//LOG.error("drawSetupP: glVertexAttribPointer({} floats)", position.capacity());
@@ -286,8 +282,8 @@ class RokuaRenderer {
 		projectionMatrix.m32 = -((2 * near_plane * far_plane) / frustum_length);
 		projectionMatrix.m33 = 0;
 		state.mPMatrix.load(projectionMatrix);
-		LOG.error("pmatrix: "+state.mPMatrix);
-		LOG.error("  "+Matrix4f.transform(state.mPMatrix, new Vector4f(1, 0, -10, 1), null));
+		Log.d("pmatrix: "+state.mPMatrix);
+		Log.d("  "+Matrix4f.transform(state.mPMatrix, new Vector4f(1, 0, -10, 1), null));
 		
 		for (Program program : programs) {
 			program.init();
