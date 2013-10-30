@@ -28,6 +28,9 @@ public class View {
 	void setViewLight(float x, float y, float z) {
 
 		// directly set a point light in view coordinates
+		point_light_1.x = x;
+		point_light_1.y = y;
+		point_light_1.z = z;
 	}
 	// convert point light given in world coordinates to view coordinates 
 	
@@ -55,8 +58,8 @@ public class View {
 		projection.m32 = -((2 * near_plane * far_plane) / frustum_length);
 		projection.m33 = 0;
 		
-		Log.d("projection: %s", projection);
-		Log.d("  "+Matrix4f.transform(projection, new Vector4f(1, 0, -10, 1), null));
+		//Log.d("projection: %s", projection);
+		//Log.d("  "+Matrix4f.transform(projection, new Vector4f(1, 0, -10, 1), null));
 	}
 //	public RenderState(float[] mMMatrix, float[] mVMatrix, float[] mPMatrix, float[] vVLight) {
 //		this.mMMatrix = mMMatrix;

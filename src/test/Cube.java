@@ -49,12 +49,12 @@ public class Cube implements Geometry {
 				{ 1,5,6,2 }
 		};
 		float[][] faceColors = new float[][] {
-				{ 1.0f, 0.0f, 0.0f, 1.0f },
-				{ 0.0f, 1.0f, 0.0f, 1.0f },
-				{ 0.0f, 0.0f, 1.0f, 1.0f },
-				{ 1.0f, 1.0f, 0.0f, 1.0f },
-				{ 0.0f, 1.0f, 1.0f, 1.0f },
-				{ 1.0f, 0.0f, 1.0f, 1.0f }
+				{ 1.0f, 0.0f, 0.0f, 0.5f },
+				{ 0.0f, 1.0f, 0.0f, 0.5f },
+				{ 0.0f, 0.0f, 1.0f, 0.5f },
+				{ 1.0f, 1.0f, 0.0f, 0.5f },
+				{ 0.0f, 1.0f, 1.0f, 0.5f },
+				{ 1.0f, 0.0f, 1.0f, 0.5f }
 		};
 		
 		Vector3f[] faceNormals = new Vector3f[faces.length];

@@ -1,14 +1,15 @@
 package test;
 
-import static org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT;
-import static org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT;
-import static org.lwjgl.opengl.GL11.GL_NO_ERROR;
-import static org.lwjgl.opengl.GL11.GL_VERSION;
-import static org.lwjgl.opengl.GL11.glClear;
-import static org.lwjgl.opengl.GL11.glClearColor;
-import static org.lwjgl.opengl.GL11.glGetError;
-import static org.lwjgl.opengl.GL11.glGetString;
-import static org.lwjgl.opengl.GL11.glViewport;
+import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL12.*;
+import static org.lwjgl.opengl.GL13.*;
+import static org.lwjgl.opengl.GL14.*;
+import static org.lwjgl.opengl.GL15.*;
+import static org.lwjgl.opengl.GL20.*;
+import static org.lwjgl.opengl.GL21.*;
+import static org.lwjgl.opengl.GL30.*;
+import static org.lwjgl.opengl.GL31.*;
+import static org.lwjgl.opengl.GL32.*;
 
 import java.nio.FloatBuffer;
 import java.util.LinkedList;
@@ -21,6 +22,7 @@ import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.PixelFormat;
 import org.lwjgl.util.glu.GLU;
 import org.lwjgl.util.vector.Matrix4f;
+import org.lwjgl.util.vector.Vector3f;
 
 public class Test {
 
@@ -48,11 +50,11 @@ public class Test {
 		Display.setDisplayMode(new DisplayMode(300, 200));
 		Display.setVSyncEnabled(true);
 		Display.create(new PixelFormat(), new ContextAttribs(3, 2).withProfileCore(true).withForwardCompatible(true));
+		Display.setResizable(true);
 
 		System.out.println("OpenGL version: " + glGetString(GL_VERSION));
 
 		// Map the internal OpenGL coordinate system to the entire screen
-		glViewport(0, 0, 300, 200);
 		exitOnGLError("setupOpenGL");
 		
 //		FloatBuffer vertexData = floatBuffer(
@@ -77,7 +79,7 @@ public class Test {
 		exitOnGLError("D");
 
 		View view = new View();
-		view.setViewLight(1, 1, 1);
+		view.setViewLight(0, 0, -1);
 		
 		//view.setProjection(60, 0.1f, 100f, Display.getWidth(), Display.getHeight());
 		
@@ -107,13 +109,16 @@ public class Test {
 		while (!Display.isCloseRequested()) {
 
 			view.setProjection(60, 0.1f, 100f, Display.getWidth(), Display.getHeight());
+			glViewport(0, 0, Display.getWidth(), Display.getHeight());
+
 			
 			glClearColor(red, green, blue, 1.0f);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			
             // rr.setLightPos(x2, y2, 3+x);
 
-			dCube.draw(view, new Matrix4f());
+			dCube.draw(view, new Matrix4f().translate(new Vector3f(0, 0, -2)));
+			
             //List<TransformedRenderable> drawList = new LinkedList<TransformedRenderable>();
             //drawList.addAll(staticGeometry);
             //drawList.add(new TransformedRenderable(cube, new Transform(0, 0, -20 + 10*(float)Math.cos(t*0.13), 0, 0, 0)));
