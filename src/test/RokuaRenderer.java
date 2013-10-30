@@ -13,6 +13,11 @@ import java.util.List;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.MemoryUtil;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL13;
+import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL30;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector4f;
 
@@ -51,9 +56,9 @@ import android.opengl.Matrix;
 
 class RokuaRenderer {
 
-    static String read(String file) throws IOException {
-    	return new String(Files.readAllBytes(Paths.get(file)), Charset.forName("UTF-8"));
-    }
+//    static String read(String file) throws IOException {
+//    	return new String(Files.readAllBytes(Paths.get(file)), Charset.forName("UTF-8"));
+//    }
 	
 	public class PointLight {
 		final Vector4f worldPosition; // point light location in world coordinates
@@ -65,30 +70,33 @@ class RokuaRenderer {
 	
 	// assumes that shader 
 
-	static FloatBuffer floatBuffer(float... data) {
-		FloatBuffer buf = BufferUtils.createFloatBuffer(data.length);
-		buf.put(data);
-		buf.flip();
-		return buf;
-	}
+//	static FloatBuffer floatBuffer(float... data) {
+//		FloatBuffer buf = BufferUtils.createFloatBuffer(data.length);
+//		buf.put(data);
+//		buf.flip();
+//		return buf;
+//	}
 	
-	public class Program implements RenderProgram {
+	// assumes quite a bit about the programs...
+	/*
+	public class Program extends RenderProgram {
 		
 	    private int program;
 	    //private int vertexHandle;
 	    //private int transformHandle;
 
-	    private int hMVPMatrix;
-	    private int hMVMatrix;
-	    private int hLightPos;
-	    private int hPosition;
-	    private int hColor;
-	    private int hNormal;
+//	    private int hMVPMatrix;
+//	    private int hMVMatrix;
+//	    private int hLightPos;
+//	    private int attribPosition;
+//	    private int attribColor;
+//	    private int attribNormal;
 	    
 	    FloatBuffer mvBuf = BufferUtils.createFloatBuffer(4*4);
 	    FloatBuffer mvpBuf = BufferUtils.createFloatBuffer(4*4);
 	    //FloatBuffer lightBuf = BufferUtils.createFloatBuffer(4);
-	    
+*/
+	    /*
 	    private final String vertexShaderCode;
 	    private final String fragmentShaderCode;
 
@@ -133,23 +141,53 @@ class RokuaRenderer {
 	        // get handle to the vertex shader's members
 	        //vertexHandle = GLES20.glGetAttribLocation(program, "position");	
 	        //transformHandle = GLES20.glGetUniformLocation(program, "transform");
-	        
 	        // these return -1 if location is not available
 	        
 	        hMVPMatrix = glGetUniformLocation(program, "u_MVPMatrix");
 	        hMVMatrix = glGetUniformLocation(program, "u_MVMatrix");
 	        hLightPos = glGetUniformLocation(program, "u_LightPos");
 
-	        hPosition = glGetAttribLocation(program, "a_Position");
-	        hColor = glGetAttribLocation(program, "a_Color");
-	        hNormal = glGetAttribLocation(program, "a_Normal");
-	        Log.d(""+hMVPMatrix+" "+hMVMatrix+" "+hLightPos+" "+hPosition+" "+hColor+" "+hNormal);
+	        // find program's vertex attributes (
+	        for (Attribute va : Attribute.values()) {
+	        	setIndex(va, glGetAttribLocation(program, va.name()));
+	        }
+//	        setIndex(VertexAttr.COLOR_4F, glGetAttribLocation(program, "a_Color"));
+//	        setIndex(VertexAttr.NORMAL_3F, glGetAttribLocation(program, "a_Normal"));
+	        
+	        Log.d(""+hMVPMatrix+" "+hMVMatrix+" "+hLightPos);
 	    }
+	    */
 	    
+/*	    
+
+ for each renderable object that has own model transform
+ we have to recalc matrixes
+ 
+  
+*/
+	    /*
 	    private void drawSetupP(RenderState state, FloatBuffer position) {
+
+			GL20.glUseProgram(program);
+			
+			// Bind the texture
+//			GL13.glActiveTexture(GL13.GL_TEXTURE0);
+//			GL11.glBindTexture(GL11.GL_TEXTURE_2D, texIds[textureSelector]);
+			
+			// Bind to the VAO that has all the information about the vertices
+//			GL30.glBindVertexArray(vaoId);
+//			GL20.glEnableVertexAttribArray(0);
+//			GL20.glEnableVertexAttribArray(1);
+//			GL20.glEnableVertexAttribArray(2);
+			
+			// Bind to the index VBO that has all the information about the order of the vertices
+			//GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, vboiId);
+			
+			// Draw the vertices
+			//GL11.glDrawElements(GL11.GL_TRIANGLES, indicesCount, GL11.GL_UNSIGNED_BYTE, 0);
 	    	
 	    	//LOG.error("drawSetupP: glUseProgram({})", program);
-	    	glUseProgram(program);
+	    	//glUseProgram(program);
 	    	
 	    	Test.exitOnGLError("a");
 	    	
@@ -215,8 +253,8 @@ class RokuaRenderer {
 		public void draw(RenderState state, FloatBuffer position, FloatBuffer color, FloatBuffer normal, ShortBuffer index, int mode) {
 	    	drawSetupPCN(state, position, color, normal);
 	    	glDrawElements(mode, index);
-		}
-	}
+		}*/
+	//}
 	
 	private float eye[] = { 0, 0 };
 
@@ -224,7 +262,7 @@ class RokuaRenderer {
 		eye = new float[] { x, y };
 	}
 	
-    private List<Program> programs = new LinkedList<Program>();
+//    private List<Program> programs = new LinkedList<Program>();
 //    private List<TransformedRenderable> drawList = new LinkedList<TransformedRenderable>();
 
     
@@ -256,6 +294,7 @@ class RokuaRenderer {
 		blue = b;
 	}
 
+	/*
 	private final double PI = 3.14159265358979323846;
 	private float degreesToRadians(float degrees) {
 		return degrees * (float)(PI / 180d);
@@ -263,6 +302,7 @@ class RokuaRenderer {
 	private float coTangent(float angle) {
 		return (float)(1f / Math.tan(angle));
 	}	
+	
 	public void initPrograms() {
 
 		Matrix4f projectionMatrix = new Matrix4f();
@@ -288,7 +328,7 @@ class RokuaRenderer {
 		for (Program program : programs) {
 			program.init();
 		}
-	}
+	}*/
     
 //    public RectF getWorldBox(){
 //        return box;
@@ -317,7 +357,7 @@ class RokuaRenderer {
 	
 	private PointLight pointLight = new PointLight(0, 0, 0);
 	
-	private final RenderState state = new RenderState(); //mMMatrix, mVMatrix, mPMatrix, vVLight);
+	private final View state = new View(); //mMMatrix, mVMatrix, mPMatrix, vVLight);
 	
 	// set rendered state for next frame
 	
@@ -355,7 +395,7 @@ class RokuaRenderer {
 		//PointLight light = pointLight;
 
         //Matrix.multiplyMV(state.vVLight, 0, state.mVMatrix, 0, pointLight.worldPosition, 0);
-
+/*
 		Matrix4f.transform(state.mVMatrix, pointLight.worldPosition, state.vVLight);
 
 		// LOG.error("ASDF");
@@ -377,5 +417,6 @@ class RokuaRenderer {
 	        	r.getRenderable().draw(state);
 	        }
     	}
+    	*/
 	}
 }

@@ -1,7 +1,11 @@
 package test;
 
+import static org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT;
+import static org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT;
 import static org.lwjgl.opengl.GL11.GL_NO_ERROR;
 import static org.lwjgl.opengl.GL11.GL_VERSION;
+import static org.lwjgl.opengl.GL11.glClear;
+import static org.lwjgl.opengl.GL11.glClearColor;
 import static org.lwjgl.opengl.GL11.glGetError;
 import static org.lwjgl.opengl.GL11.glGetString;
 import static org.lwjgl.opengl.GL11.glViewport;
@@ -16,6 +20,7 @@ import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.PixelFormat;
 import org.lwjgl.util.glu.GLU;
+import org.lwjgl.util.vector.Matrix4f;
 
 public class Test {
 
@@ -38,6 +43,8 @@ public class Test {
 	
 	public static void main(String[] args) throws Exception {
 
+		
+		
 		Display.setDisplayMode(new DisplayMode(300, 200));
 		Display.setVSyncEnabled(true);
 		Display.create(new PixelFormat(), new ContextAttribs(3, 2).withProfileCore(true).withForwardCompatible(true));
@@ -58,20 +65,26 @@ public class Test {
 //		glBufferData(GL_ARRAY_BUFFER, vertexData, GL_STATIC_DRAW);
 		
 		
-		RokuaRenderer r = new RokuaRenderer();
+		//RokuaRenderer r = new RokuaRenderer();
 		exitOnGLError("A");
-        RenderProgram p = r.new Program("vertex_default.glsl", "fragment_default.glsl");
+        RenderProgram p = new RenderProgram("vertex_default.glsl", "fragment_default.glsl");
 		exitOnGLError("B");
         
         // GLU.gluLookAt(eyex, eyey, eyez, centerx, cente§ry, centerz, upx, upy, upz);
         Cube cube = new Cube(0.4f);
 		exitOnGLError("C");
-        cube.setProgram(p);
+        Drawable dCube = cube.prepare(p);
 		exitOnGLError("D");
 
+		View view = new View();
+		view.setViewLight(1, 1, 1);
+		
+		//view.setProjection(60, 0.1f, 100f, Display.getWidth(), Display.getHeight());
 		
 		
-        r.initPrograms();
+		//dCube.d
+		
+        //r.initPrograms();
         
         
         
@@ -86,14 +99,24 @@ public class Test {
         
 
         int t = 0;
-		
+
+    	float red = 0.9f;
+    	float green = 0.2f;
+    	float blue = 0.2f;
+        
 		while (!Display.isCloseRequested()) {
+
+			view.setProjection(60, 0.1f, 100f, Display.getWidth(), Display.getHeight());
+			
+			glClearColor(red, green, blue, 1.0f);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			
             // rr.setLightPos(x2, y2, 3+x);
 
-            List<TransformedRenderable> drawList = new LinkedList<TransformedRenderable>();
+			dCube.draw(view, new Matrix4f());
+            //List<TransformedRenderable> drawList = new LinkedList<TransformedRenderable>();
             //drawList.addAll(staticGeometry);
-            drawList.add(new TransformedRenderable(cube, new Transform(0, 0, -20 + 10*(float)Math.cos(t*0.13), 0, 0, 0)));
+            //drawList.add(new TransformedRenderable(cube, new Transform(0, 0, -20 + 10*(float)Math.cos(t*0.13), 0, 0, 0)));
             
             
             //r.se
@@ -106,8 +129,7 @@ public class Test {
 			//glClear( GL_COLOR_BUFFER_BIT );
             
     		exitOnGLError("F");
-            
-			r.draw(drawList);
+			//r.draw(drawList);
     		exitOnGLError("G");
 
 			Display.sync(60);

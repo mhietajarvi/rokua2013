@@ -2,9 +2,6 @@ package test;
 
 public class Log {
 	
-	// opengl error handling
-	// (check after every call)
-	
 	public static boolean d = true;
 	public static boolean i = true;
 	public static boolean w = true;

@@ -4,7 +4,7 @@ package test;
  * Renderable rendered with single program.
  *
  */
-public abstract class SimpleRenderable implements Renderable {
+public abstract class SimpleRenderable implements Drawable {
 
 	RenderProgram program;
 	

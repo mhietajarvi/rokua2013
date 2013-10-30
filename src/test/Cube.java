@@ -4,19 +4,26 @@ import java.nio.FloatBuffer;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL30;
 import org.lwjgl.util.vector.Vector3f;
 
+import test.RenderProgram.Attribute;
 
-public class Cube extends SimpleRenderable {
+
+public class Cube implements Geometry {
 
 	//private FloatBuffer vertexBuffer;
 	//private ShortBuffer indexBuffer;
 	
-	private final FloatBuffer positions;
-	private final FloatBuffer colors;
-	private final FloatBuffer normals;
+//	private final FloatBuffer positions;
+//	private final FloatBuffer colors;
+//	private final FloatBuffer normals;
 	
+	private final FloatBuffer attribs;
 
+	private int triCount;
 	/**
 	 * A shape with 8 corners at |r|,|r|,|r|.
 	 */
@@ -52,7 +59,7 @@ public class Cube extends SimpleRenderable {
 		
 		Vector3f[] faceNormals = new Vector3f[faces.length];
 		
-		int triCount = 0;
+		triCount = 0;
 		for (int i = 0; i < faces.length; i++) {
 			short[] f = faces[i];
 			faceNormals[i] = Util.normal(c[f[0]], c[f[1]], c[f[2]]);
@@ -88,16 +95,34 @@ public class Cube extends SimpleRenderable {
 				t++;
 			}
 		}
-		positions = BufferUtils.createFloatBuffer(pos.length*3*3);
-		//positions = ByteBuffer.allocateDirect(pos.length*3*3*4).order(ByteOrder.nativeOrder()).asFloatBuffer();
-		Util.put(pos, positions).flip();
-		normals = BufferUtils.createFloatBuffer(nrm.length*3*3);
-		//normals = ByteBuffer.allocateDirect(nrm.length*3*3*4).order(ByteOrder.nativeOrder()).asFloatBuffer();
-		Util.put(nrm, normals).flip();
-		colors = BufferUtils.createFloatBuffer(clr.length*3*4);
-		//colors = ByteBuffer.allocateDirect(clr.length*3*4*4).order(ByteOrder.nativeOrder()).asFloatBuffer();
-		Util.put(clr, colors).flip();
+		
+		// generate vertex data
+		
+		// bind vertex data to server side buffers
+		
+		// render vertex data
+		
+		
+		attribs = BufferUtils.createFloatBuffer(pos.length*3*3 + nrm.length*3*3 + clr.length*3*4);
+		
+//		positions = BufferUtils.createFloatBuffer(pos.length*3*3);
+//		//positions = ByteBuffer.allocateDirect(pos.length*3*3*4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+//		Util.put(pos, positions).flip();
+//		normals = BufferUtils.createFloatBuffer(nrm.length*3*3);
+//		//normals = ByteBuffer.allocateDirect(nrm.length*3*3*4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+//		Util.put(nrm, normals).flip();
+//		colors = BufferUtils.createFloatBuffer(clr.length*3*4);
+//		//colors = ByteBuffer.allocateDirect(clr.length*3*4*4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+//		Util.put(clr, colors).flip();
 
+		posOffset = attribs.position();
+		Util.put(pos, attribs);
+		nrmOffset = attribs.position();
+		Util.put(nrm, attribs);
+		clrOffset = attribs.position();
+		Util.put(clr, attribs);
+		attribs.flip();
+		
 		// calculate normal for each face
 		// create tris from each face
 		// for each vertex of each tri, output:
@@ -147,11 +172,64 @@ public class Cube extends SimpleRenderable {
 //		indexBuffer.put(i);
 //		indexBuffer.position(0);
 	}
+	int posOffset;
+	int nrmOffset;
+	int clrOffset;
 
+//	int vao = 0;
+//	int vbo = 0;
+	
 	@Override
-	public void draw(RenderState state) {
-		
-		int cap = positions.capacity()/3;
-		program.draw(state, positions, colors, normals, GL11.GL_TRIANGLES, cap);
+	public Drawable prepare(RenderProgram program) {
+
+		return new DrawableGeometry(program) {
+			
+			int vao;
+			int vbo;
+			{
+				vao = GL30.glGenVertexArrays();
+				GL30.glBindVertexArray(vao);
+				
+				// create buffer and upload all vertex attributes
+				vbo = GL15.glGenBuffers();
+				GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
+				GL15.glBufferData(GL15.GL_ARRAY_BUFFER, attribs, GL15.GL_STATIC_DRAW);
+	
+				GL20.glVertexAttribPointer(program.getIndex(Attribute.POSITION_3F), 3, GL11.GL_FLOAT, false, 0, posOffset);
+				GL20.glVertexAttribPointer(program.getIndex(Attribute.NORMAL_3F), 3, GL11.GL_FLOAT, false, 0, nrmOffset);
+				GL20.glVertexAttribPointer(program.getIndex(Attribute.COLOR_4F), 4, GL11.GL_FLOAT, false, 0, clrOffset);
+				GL20.glEnableVertexAttribArray(program.getIndex(Attribute.POSITION_3F));
+				GL20.glEnableVertexAttribArray(program.getIndex(Attribute.NORMAL_3F));
+				GL20.glEnableVertexAttribArray(program.getIndex(Attribute.COLOR_4F));
+				
+				GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+				GL30.glBindVertexArray(0);
+			}
+			@Override
+			protected void drawGeometry() {
+				GL30.glBindVertexArray(vao);
+				GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, triCount*3);
+			}
+			@Override
+			public void destroy() {
+				GL30.glDeleteVertexArrays(vao);
+				GL15.glDeleteBuffers(vbo);
+			}
+		};
 	}
+
+//	@Override
+//	public void draw() {
+//
+//		//GL20.glUseProgram(program);
+//		
+//		GL30.glBindVertexArray(vao);
+//		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, triCount*3);
+//		
+////		int cap = positions.capacity()/3;
+////		program.draw(state, positions, colors, normals, GL11.GL_TRIANGLES, cap);
+//	}
+	
+	//@Override
+		
 }

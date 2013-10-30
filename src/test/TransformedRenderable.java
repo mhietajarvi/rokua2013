@@ -5,14 +5,14 @@ package test;
  */
 public class TransformedRenderable {
 
-	private final Renderable renderable;
+	private final Drawable renderable;
 	private final Transform transform;
 
-	public TransformedRenderable(Renderable renderable, Transform transform) {
+	public TransformedRenderable(Drawable renderable, Transform transform) {
 		this.renderable = renderable;
 		this.transform = transform;
 	}
-	public Renderable getRenderable() {
+	public Drawable getRenderable() {
 		return renderable;
 	}
 	public Transform getTransform() {
