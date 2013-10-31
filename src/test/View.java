@@ -1,6 +1,8 @@
 package test;
 
 import org.lwjgl.util.vector.Matrix4f;
+import org.lwjgl.util.vector.Quaternion;
+import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
 // things that should stay static for one frame
@@ -36,6 +38,29 @@ public class View {
 	
 	void setView() {
 		// e.g. look at something from somewhere 
+	}
+
+	void translateView(float dx, float dy, float dz) {
+		
+		Matrix4f translation = new Matrix4f();
+		translation.translate(new Vector3f(dx, dy, dz));
+		
+		Matrix4f.mul(translation, world_to_view, world_to_view);
+		
+		//world_to_view.translate(new Vector3f(dx, dy, dz));
+	}
+	
+	void rotateView(float dx, float dy) {
+		
+		Vector3f vec = new Vector3f(-dy, dx, 0);
+		float len = vec.length();
+		vec.normalise();
+		
+		Matrix4f rotation = new Matrix4f();
+		rotation.rotate(len, vec);
+		
+		Matrix4f.mul(rotation, world_to_view, world_to_view);
+		//world_to_view.rotate(len, vec);
 	}
 
 	void setProjection(float fieldOfView, float near_plane, float far_plane, int viewportWidth, int viewportHeight) {

@@ -16,7 +16,7 @@ in vec3 v_position;  // Interpolated position for this fragment.
 in vec4 v_color;     // This is the color from the vertex shader interpolated across the triangle per fragment.
 in vec3 v_normal;    // Interpolated normal for this fragment.
 
-out vec3 out_color;
+out vec4 out_color;
 
 // The entry point for our fragment shader.
 void main() {
@@ -32,11 +32,11 @@ void main() {
 	
 	// Calculate the dot product of the light vector and vertex normal. If the normal and light vector are
 	// pointing in the same direction then it will get max illumination.
-	float diffuse = max(dot(v_normal, lightVector), 0.1);
+	float diffuse = max(dot(v_normal, lightVector), 0.5);
 	
 	// Add attenuation.
-	// diffuse = diffuse * (1.0 / (1.0 + (0.25 * distance * distance)));
+	diffuse = diffuse * (1.0 / (1.0 + (0.25 * distance * distance)));
 	
 	// Multiply the color by the diffuse illumination level to get final output color.
-	out_color = mix(vec3(v_color), out_color, v_color[3]); // * diffuse;
+	out_color = v_color * diffuse; //mix(vec3(v_color) * diffuse, out_color, v_color[3]); //
 }

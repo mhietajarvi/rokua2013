@@ -1,6 +1,7 @@
 package test;
 
 import java.nio.FloatBuffer;
+import java.util.Arrays;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
@@ -49,12 +50,12 @@ public class Cube implements Geometry {
 				{ 1,5,6,2 }
 		};
 		float[][] faceColors = new float[][] {
-				{ 1.0f, 0.0f, 0.0f, 0.5f },
-				{ 0.0f, 1.0f, 0.0f, 0.5f },
-				{ 0.0f, 0.0f, 1.0f, 0.5f },
-				{ 1.0f, 1.0f, 0.0f, 0.5f },
-				{ 0.0f, 1.0f, 1.0f, 0.5f },
-				{ 1.0f, 0.0f, 1.0f, 0.5f }
+				{ 1.0f, 0.0f, 0.0f, 1.0f },
+				{ 0.0f, 1.0f, 0.0f, 1.0f },
+				{ 0.0f, 0.0f, 1.0f, 1.0f },
+				{ 1.0f, 1.0f, 0.0f, 1.0f },
+				{ 0.0f, 1.0f, 1.0f, 1.0f },
+				{ 1.0f, 0.0f, 1.0f, 1.0f }
 		};
 		
 		Vector3f[] faceNormals = new Vector3f[faces.length];
@@ -63,6 +64,7 @@ public class Cube implements Geometry {
 		for (int i = 0; i < faces.length; i++) {
 			short[] f = faces[i];
 			faceNormals[i] = Util.normal(c[f[0]], c[f[1]], c[f[2]]);
+			faceNormals[i].normalise();
 			triCount += f.length - 2;
 		}
 		
@@ -122,6 +124,25 @@ public class Cube implements Geometry {
 		clrOffset = attribs.position();
 		Util.put(clr, attribs);
 		attribs.flip();
+		
+		float[] f = new float[attribs.limit()];
+		attribs.get(f);
+		attribs.flip();
+		
+		System.out.println("pos");
+		for (int i = 0; i < triCount*3; i++) {
+			System.out.println(Arrays.toString(Arrays.copyOfRange(f, i*3, i*3 + 3)));
+		}
+		
+		System.out.println("nrm");
+		for (int i = 0; i < triCount*3; i++) {
+			System.out.println(Arrays.toString(Arrays.copyOfRange(f, nrmOffset+ i*3, nrmOffset + i*3 + 3)));
+		}
+
+		System.out.println("clr");
+		for (int i = 0; i < triCount*3; i++) {
+			System.out.println(Arrays.toString(Arrays.copyOfRange(f, clrOffset+ i*4, clrOffset + i*4 + 4)));
+		}
 		
 		// calculate normal for each face
 		// create tris from each face
@@ -193,15 +214,20 @@ public class Cube implements Geometry {
 				// create buffer and upload all vertex attributes
 				vbo = GL15.glGenBuffers();
 				GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
-				GL15.glBufferData(GL15.GL_ARRAY_BUFFER, attribs, GL15.GL_STATIC_DRAW);
+				GL15.glBufferData(GL15.GL_ARRAY_BUFFER, attribs, GL15.GL_STREAM_DRAW);
 	
-				GL20.glVertexAttribPointer(program.getIndex(Attribute.POSITION_3F), 3, GL11.GL_FLOAT, false, 0, posOffset);
-				GL20.glVertexAttribPointer(program.getIndex(Attribute.NORMAL_3F), 3, GL11.GL_FLOAT, false, 0, nrmOffset);
-				GL20.glVertexAttribPointer(program.getIndex(Attribute.COLOR_4F), 4, GL11.GL_FLOAT, false, 0, clrOffset);
+				int nindex = program.getIndex(Attribute.NORMAL_3F);
+				int cindex = program.getIndex(Attribute.COLOR_4F);
+				GL20.glVertexAttribPointer(program.getIndex(Attribute.POSITION_3F), 3, GL11.GL_FLOAT, false, 0, posOffset*4);
 				GL20.glEnableVertexAttribArray(program.getIndex(Attribute.POSITION_3F));
-				GL20.glEnableVertexAttribArray(program.getIndex(Attribute.NORMAL_3F));
-				GL20.glEnableVertexAttribArray(program.getIndex(Attribute.COLOR_4F));
-				
+				if (nindex >= 0) {
+					GL20.glVertexAttribPointer(nindex, 3, GL11.GL_FLOAT, false, 0, nrmOffset*4);
+					GL20.glEnableVertexAttribArray(nindex);
+				}
+				if (cindex >= 0) {
+					GL20.glVertexAttribPointer(cindex, 4, GL11.GL_FLOAT, false, 0, clrOffset*4);
+					GL20.glEnableVertexAttribArray(cindex);
+				}
 				GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
 				GL30.glBindVertexArray(0);
 			}
