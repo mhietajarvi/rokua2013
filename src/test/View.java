@@ -1,7 +1,6 @@
 package test;
 
 import org.lwjgl.util.vector.Matrix4f;
-import org.lwjgl.util.vector.Quaternion;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
@@ -44,10 +43,8 @@ public class View {
 		
 		Matrix4f translation = new Matrix4f();
 		translation.translate(new Vector3f(dx, dy, dz));
-		
 		Matrix4f.mul(translation, world_to_view, world_to_view);
-		
-		//world_to_view.translate(new Vector3f(dx, dy, dz));
+		orthogonalize();
 	}
 	
 	void rotateView(float dx, float dy) {
@@ -55,41 +52,28 @@ public class View {
 		Vector3f vec = new Vector3f(-dy, dx, 0);
 		float len = vec.length();
 		vec.normalise();
-		
 		Matrix4f rotation = new Matrix4f();
 		rotation.rotate(len, vec);
-		
 		Matrix4f.mul(rotation, world_to_view, world_to_view);
-		//world_to_view.rotate(len, vec);
+		orthogonalize();
+	}
+	
+	void orthogonalize() {
+		// TODO: orthogonalize world_to_view matrix to reset accumulated error
 	}
 
-	void setProjection(float fieldOfView, float near_plane, float far_plane, int viewportWidth, int viewportHeight) {
+	void setProjection(float fieldOfView, float nearPlane, float farPlane, int viewportWidth, int viewportHeight) {
 		
-		// projection.setIdentity();
-		
-		// float fieldOfView = 60f;
 		float aspectRatio = (float)viewportWidth / (float)viewportHeight;
-		//float near_plane = 0.1f;
-		//float far_plane = 100f;
+		float yScale = this.coTangent(degreesToRadians(fieldOfView / 2f));
+		float xScale = yScale / aspectRatio;
+		float frustumLength = farPlane - nearPlane;
 		 
-		float y_scale = this.coTangent(this.degreesToRadians(fieldOfView / 2f));
-		float x_scale = y_scale / aspectRatio;
-		float frustum_length = far_plane - near_plane;
-		 
-		projection.m00 = x_scale;
-		projection.m11 = y_scale;
-		projection.m22 = -((far_plane + near_plane) / frustum_length);
+		projection.m00 = xScale;
+		projection.m11 = yScale;
+		projection.m22 = -((farPlane + nearPlane) / frustumLength);
 		projection.m23 = -1;
-		projection.m32 = -((2 * near_plane * far_plane) / frustum_length);
+		projection.m32 = -((2 * nearPlane * farPlane) / frustumLength);
 		projection.m33 = 0;
-		
-		//Log.d("projection: %s", projection);
-		//Log.d("  "+Matrix4f.transform(projection, new Vector4f(1, 0, -10, 1), null));
 	}
-//	public RenderState(float[] mMMatrix, float[] mVMatrix, float[] mPMatrix, float[] vVLight) {
-//		this.mMMatrix = mMMatrix;
-//		this.mVMatrix = mVMatrix;
-//		this.mPMatrix = mPMatrix;
-//		this.vVLight = vVLight;
-//	}
 }

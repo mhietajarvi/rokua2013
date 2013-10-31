@@ -125,6 +125,7 @@ public class Cube implements Geometry {
 		Util.put(clr, attribs);
 		attribs.flip();
 		
+		/*
 		float[] f = new float[attribs.limit()];
 		attribs.get(f);
 		attribs.flip();
@@ -143,6 +144,7 @@ public class Cube implements Geometry {
 		for (int i = 0; i < triCount*3; i++) {
 			System.out.println(Arrays.toString(Arrays.copyOfRange(f, clrOffset+ i*4, clrOffset + i*4 + 4)));
 		}
+		*/
 		
 		// calculate normal for each face
 		// create tris from each face
@@ -197,9 +199,6 @@ public class Cube implements Geometry {
 	int nrmOffset;
 	int clrOffset;
 
-//	int vao = 0;
-//	int vbo = 0;
-	
 	@Override
 	public Drawable prepare(RenderProgram program) {
 

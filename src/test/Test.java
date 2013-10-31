@@ -11,9 +11,15 @@ import static org.lwjgl.opengl.GL30.*;
 import static org.lwjgl.opengl.GL31.*;
 import static org.lwjgl.opengl.GL32.*;
 
+import java.awt.image.BufferedImage;
+import java.awt.image.Raster;
+import java.io.File;
+import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.util.LinkedList;
 import java.util.List;
+
+import javax.imageio.ImageIO;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.input.Keyboard;
@@ -25,6 +31,42 @@ import org.lwjgl.opengl.PixelFormat;
 import org.lwjgl.util.glu.GLU;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
+
+
+/*
+ * ideas:
+ * 
+ *  text scroller, where each letter is composed of random arrangement of solids
+ *  and solids behave a bit like asteroids
+ *  
+ *  (solids turn transparent dynamically, possible?)
+ * 
+ *  required for that:
+ *  - better drawable/transformation management system
+ *  - repurpose used solids for new letters on the fly
+ *  - 
+ * 
+ * 
+ *  transparent objects
+ *  
+ *  - how transparency work in the first place
+ *  - rendering order must be managed manually
+ * 
+ *  (real glass ball)
+ * 
+ *  - advanced:
+ *    - render back side of transparent object, store z and surface normal for each fragment
+ *    - render front face
+ *      - shoot ray to back side buffer, bounce from back side and sample back z/color (or env cube map) with refracted ray 
+ *      - calculate reflected ray, sample env map with it
+ *     
+ *    (so env map reflection is standard stuff, novel thing is storing the back side geometry and calculating refracted rays) 
+ *     - 
+ *    (look up texel in cube map with direction)
+ *     
+ *  calculate , lookup to z/color buffers framebuffer
+ * 
+ */
 
 public class Test {
 
@@ -43,6 +85,16 @@ public class Test {
 			if (Display.isCreated()) Display.destroy();
 			System.exit(-1);
 		}
+	}
+	
+	// 
+	public void loadCubeTexture(String directory) throws IOException {
+		
+		BufferedImage img = ImageIO.read(new File(directory, "top.jpg"));
+		Raster r = img.getData();
+		// r.
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, level, internalformat, width, height, border, format, type, pixels_buffer_offset);
+		
 	}
 	
 	public static void main(String[] args) throws Exception {
@@ -66,6 +118,9 @@ public class Test {
 //		glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
 //		glBufferData(GL_ARRAY_BUFFER, vertexData, GL_STATIC_DRAW);
 		
+		
+		
+		// glTexI
 		
 		//RokuaRenderer r = new RokuaRenderer();
 		exitOnGLError("A");

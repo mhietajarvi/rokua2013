@@ -11,9 +11,9 @@ public abstract class DrawableGeometry implements Drawable {
 	}
 
 	@Override
-	public void draw(View state, Matrix4f modelTransform) {
+	public void draw(View view, Matrix4f model_to_world) {
 		
-		program.prepare(state, modelTransform);
+		program.useWith(view, model_to_world);
 		drawGeometry();
 	}
 	

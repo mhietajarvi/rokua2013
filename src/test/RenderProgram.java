@@ -1,6 +1,11 @@
 package test;
 
+import static org.lwjgl.opengl.GL11.GL_TRUE;
 import static org.lwjgl.opengl.GL20.*;
+import static org.lwjgl.opengl.GL21.*;
+import static org.lwjgl.opengl.GL30.*;
+import static org.lwjgl.opengl.GL31.*;
+import static org.lwjgl.opengl.GL32.*;
 
 import java.io.IOException;
 import java.nio.FloatBuffer;
@@ -43,12 +48,18 @@ public class RenderProgram {
 
 	public static enum Uniform {
 		// standard matrices that should be used by any sane vertex shader
+		U_MODEL_TO_WORLD_M4,
 		U_MODEL_TO_VIEW_M4,
 		U_MODEL_TO_PROJECTED_M4,
 
 		// I don't yet know how to elegantly handle different light types
 		// supported by shaders...
-		U_POINT_LIGHT_1_3F, U_POINT_LIGHT_2_3F, U_POINT_LIGHT_3_3F
+		U_POINT_LIGHT_1_3F,
+		U_POINT_LIGHT_2_3F,
+		U_POINT_LIGHT_3_3F,
+
+		// 
+		U_ENV_CUBE
 	}
 
 	public static enum Attribute {
@@ -65,6 +76,7 @@ public class RenderProgram {
 	
 
 	public RenderProgram(String vertexShaderFile, String fragmentShaderFile) throws IOException {
+		
 		Arrays.fill(uIndices, -1);
 		Arrays.fill(aIndices, -1);
 		
@@ -76,6 +88,11 @@ public class RenderProgram {
 		glAttachShader(program, vertexShader);
 		glAttachShader(program, fragmentShader);
 		glLinkProgram(program);
+		
+		if (glGetProgrami(program, GL_LINK_STATUS) != GL_TRUE) {
+			throw new IllegalArgumentException("Could not link program with shaders: "+vertexShaderFile+","+fragmentShaderFile+"\n"+glGetProgramInfoLog(program, 10000));
+		}
+		
 		Log.d("Linked shaders %s and %s to program %s", vertexShader, fragmentShader, program);
 
 		StringBuilder sb = new StringBuilder();
@@ -118,14 +135,18 @@ public class RenderProgram {
 		// add the source code to the shader and compile it
 		glShaderSource(shader, shaderCode);
 		glCompileShader(shader);
-        Log.d(glGetShaderInfoLog(shader, 10000));
+		
+		if (glGetShaderi(shader, GL_COMPILE_STATUS) != GL_TRUE) {
+			//Log.d("Shader compilation failed: \n"+glGetShaderInfoLog(shader, 10000));
+			throw new IllegalArgumentException("Could not compile shader code:\n"+shaderCode+"\n"+glGetShaderInfoLog(shader, 10000));
+		}
 
 		// Log.d(glGetShaderInfoLog(shader, 10000));
 		Log.d("Compiled shader %s, source size = %s bytes", shader, shaderCode.length());
 		return shader;
 	}
 
-	public void prepare(View view, Matrix4f model_to_world) {
+	public void useWith(View view, Matrix4f model_to_world) {
 		
 		glUseProgram(program);
 		
@@ -154,12 +175,18 @@ public class RenderProgram {
     	// pass in the light position and transformations
     	
     	buf.clear();
+    	model_to_world.store(buf);
+    	buf.flip();
+        glUniformMatrix4(getIndex(Uniform.U_MODEL_TO_WORLD_M4), false, buf);
+		
+    	buf.clear();
         model_to_view.store(buf);
-        buf.rewind();
+    	buf.flip();
         glUniformMatrix4(getIndex(Uniform.U_MODEL_TO_VIEW_M4), false, buf);
-        
+		
+    	buf.clear();
         model_to_projected.store(buf);
-        buf.rewind();
+    	buf.flip();
         glUniformMatrix4(getIndex(Uniform.U_MODEL_TO_PROJECTED_M4), false, buf);
 
         // map current lights to uniforms provided by shader program
