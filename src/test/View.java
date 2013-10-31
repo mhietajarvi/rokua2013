@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Random;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
@@ -58,17 +59,28 @@ public class View {
     	
     	envCubeTexture = glGenTextures();
 		glBindTexture(GL_TEXTURE_CUBE_MAP, envCubeTexture);
+		
+		Random r = new Random(234);
+		
+		WTF? this works if side == 1, what is going on???
+		
+		int side = 3;
+		int n = side*side*3;
+		byte[] tmp = new byte[n];
     	
 		for (int i = 0; i < 6; i++) {
 
-			ByteBuffer b = BufferUtils.createByteBuffer(3); //imageData.loadImage(new BufferedInputStream(is), false, null); // new int[]{}
-			
-			b.put(new byte[]{ (byte)55, (byte)55, (byte)255 });
+			ByteBuffer b = BufferUtils.createByteBuffer(n); //imageData.loadImage(new BufferedInputStream(is), false, null); // new int[]{}
+			r.nextBytes(tmp);
+			b.put(tmp);
+//			for (int j = 0; j < 4; j++) {
+//				b.put(new byte[]{ (byte)r.nextBytes(bytes);Radn55, (byte)55, (byte)255 });
+//			}
 			b.flip();
 	        glTexImage2D(cube_map_side[i], 0,
             GL_RGB,
-            1,
-            1,
+            side,
+            side,
             0, 
             GL_RGB,
             GL_UNSIGNED_BYTE,
