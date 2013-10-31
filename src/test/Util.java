@@ -36,7 +36,7 @@ public class Util {
 		
 		Vector3f tmp1 = Vector3f.sub(p2, p1, null);
 		Vector3f tmp2 = Vector3f.sub(p3, p1, null);
-		return Vector3f.cross(tmp1, tmp2, null);
+		return Vector3f.cross(tmp2, tmp1, null);
 //		Vector3f tmp1 = new Vector3f(p2);
 //		Vector3f tmp2 = new Vector3f(p3);
 //		tmp1.sub(p1);

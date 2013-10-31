@@ -13,8 +13,12 @@ import static org.lwjgl.opengl.GL32.*;
 
 import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.LinkedList;
 import java.util.List;
@@ -31,6 +35,9 @@ import org.lwjgl.opengl.PixelFormat;
 import org.lwjgl.util.glu.GLU;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
+import org.newdawn.slick.opengl.ImageIOImageData;
+import org.newdawn.slick.opengl.TextureLoader;
+import org.newdawn.slick.opengl.renderer.SGL;
 
 
 /*
@@ -87,15 +94,36 @@ public class Test {
 		}
 	}
 	
-	// 
-	public void loadCubeTexture(String directory) throws IOException {
+	/*
+	public static void loadCubeTexture(String directory) throws IOException {
+
+		InputStream is = new FileInputStream(new File(directory, "top.jpg"));
+		ImageIOImageData imageData = new ImageIOImageData();
+    	ByteBuffer textureBuffer = imageData.loadImage(new BufferedInputStream(is), false, null); // new int[]{}
 		
-		BufferedImage img = ImageIO.read(new File(directory, "top.jpg"));
-		Raster r = img.getData();
+		int texture = glGenTextures();
+		glBindTexture(GL_TEXTURE_CUBE_MAP, texture);
+		
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0,
+                GL_RGBA8,
+                imageData.getWidth(),
+                imageData.getHeight(),
+                0, 
+                imageData.getDepth() == 32 ? GL_RGBA : GL_RGB,
+                GL_UNSIGNED_BYTE,
+                textureBuffer);
+        
+        // glTex
+    	
+		
+		//TextureLoader.getTexture("JPG", in)
+		
+		//BufferedImage img = ImageIO.read(new File(directory, "top.jpg"));
+		//Raster r = img.getData();
 		// r.
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, level, internalformat, width, height, border, format, type, pixels_buffer_offset);
+		//glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, internalformat, width, height, border, format, type, pixels_buffer_offset);
 		
-	}
+	}*/
 	
 	public static void main(String[] args) throws Exception {
 
@@ -104,6 +132,8 @@ public class Test {
 		Display.create(new PixelFormat(), new ContextAttribs(3, 2).withProfileCore(true).withForwardCompatible(true));
 		Display.setResizable(true);
 
+		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+		
 		System.out.println("OpenGL version: " + glGetString(GL_VERSION));
 
 		// Map the internal OpenGL coordinate system to the entire screen
@@ -135,6 +165,9 @@ public class Test {
 
 		View view = new View();
 		view.setViewLight(0, 0, 0);
+
+		// ugly as hell
+		view.loadCubeTexture("assets/images/env2");
 		
 		//view.setProjection(60, 0.1f, 100f, Display.getWidth(), Display.getHeight());
 		
@@ -196,6 +229,10 @@ public class Test {
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			
             // rr.setLightPos(x2, y2, 3+x);
+			
+	    	glActiveTexture(GL_TEXTURE0 + view.envCubeSampler);
+			glBindTexture(GL_TEXTURE_CUBE_MAP, view.envCubeTexture);
+			
 
 			dCube.draw(view, new Matrix4f().translate(new Vector3f(0, 0, -2)));
 			

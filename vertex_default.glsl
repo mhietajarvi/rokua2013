@@ -31,7 +31,7 @@ void main() {
 	v_position = vec3(U_MODEL_TO_VIEW_M4 * pos);
 	
     // Pass through the color.
-	v_color = COLOR_4F;
+	v_color = COLOR_4F; //vec4(v_position, 1); //COLOR_4F;
 	
 	// Transform the normal's orientation into eye space. (this works if there is no non-uniform scaling)
 	v_normal = mat3x3(U_MODEL_TO_VIEW_M4) * NORMAL_3F;

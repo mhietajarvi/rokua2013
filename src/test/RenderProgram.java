@@ -149,7 +149,7 @@ public class RenderProgram {
 	public void useWith(View view, Matrix4f model_to_world) {
 		
 		glUseProgram(program);
-		
+
 		// Bind the texture
 //		GL13.glActiveTexture(GL13.GL_TEXTURE0);
 //		GL11.glBindTexture(GL11.GL_TEXTURE_2D, texIds[textureSelector]);
@@ -191,6 +191,10 @@ public class RenderProgram {
 
         // map current lights to uniforms provided by shader program
         glUniform3f(getIndex(Uniform.U_POINT_LIGHT_1_3F), view.point_light_1.x, view.point_light_1.y, view.point_light_1.z);
+        
+        glUniform1i(getIndex(Uniform.U_ENV_CUBE), view.envCubeSampler);
+        
+        // glUniform
         
 //        state.vVLight
 //        

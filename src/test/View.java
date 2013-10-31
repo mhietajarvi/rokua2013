@@ -1,11 +1,125 @@
 package test;
 
+import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL12.*;
+import static org.lwjgl.opengl.GL13.*;
+import static org.lwjgl.opengl.GL14.*;
+import static org.lwjgl.opengl.GL15.*;
+import static org.lwjgl.opengl.GL20.*;
+import static org.lwjgl.opengl.GL21.*;
+import static org.lwjgl.opengl.GL30.*;
+import static org.lwjgl.opengl.GL31.*;
+import static org.lwjgl.opengl.GL32.*;
+
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
+
+import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL33;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
+import org.newdawn.slick.opengl.ImageIOImageData;
 
 // things that should stay static for one frame
 public class View {
+
+	int envCubeTexture;
+	int envCubeSampler = 0;
+
+	// load cube texture to texture unit 0
+	public void loadTexture(String file, int textureUnit) {
+		
+	}
+	int[] cube_map_side = {
+			GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
+			GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
+			GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z };
+	String[] cube_map_file = {
+			"right.jpg", "left.jpg", "top.jpg", "bottom.jpg", "back.jpg", "front.jpg" };
+	
+	byte[] gen = new byte[1024*1024*3];
+	{
+		Arrays.fill(gen, (byte)255);
+	}
+
+	// load texture to: texture unit, generate id
+	// select texture to be used
+	
+	public void loadCubeTexture(String directory) throws IOException {
+
+    	glActiveTexture(GL_TEXTURE0 + envCubeSampler);
+    	
+    	envCubeTexture = glGenTextures();
+		glBindTexture(GL_TEXTURE_CUBE_MAP, envCubeTexture);
+    	
+		for (int i = 0; i < 6; i++) {
+
+			ByteBuffer b = BufferUtils.createByteBuffer(3); //imageData.loadImage(new BufferedInputStream(is), false, null); // new int[]{}
+			
+			b.put(new byte[]{ (byte)55, (byte)55, (byte)255 });
+			b.flip();
+	        glTexImage2D(cube_map_side[i], 0,
+            GL_RGB,
+            1,
+            1,
+            0, 
+            GL_RGB,
+            GL_UNSIGNED_BYTE,
+            b);
+			
+			
+//			InputStream is = new FileInputStream(new File(directory, cube_map_file[i]));
+//			ImageIOImageData imageData = new ImageIOImageData();
+//	    	ByteBuffer textureBuffer = imageData.loadImage(new BufferedInputStream(is), false, null); // new int[]{}
+//	    	
+//	    	Log.d("tex: pos="+textureBuffer.position()+", limit="+textureBuffer.limit());
+//	    	Log.d("img: width="+imageData.getWidth()+", height="+imageData.getHeight());
+//	    	Log.d("img: twidth="+imageData.getTexWidth()+", theight="+imageData.getTexHeight());
+//	    	Log.d("img: depth="+imageData.getDepth());
+//
+//	    	textureBuffer.put(gen);
+//	    	textureBuffer.rewind();
+//	    	
+//	    	//textureBuffer.pu
+//	    	for (int j = 0; j < 10; j++) {
+//	    		for (int k = 0; k < 3; k++) {
+//	    			Log.d("color: ("+textureBuffer.get()+","+textureBuffer.get()+","+textureBuffer.get()+")");
+//	    		}
+//	    	}
+//	    	
+//	    	textureBuffer.rewind();
+//	    	
+//	    	// GL33.glGenSamplers()
+//	    	
+//			glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+//			
+//	        glTexImage2D(cube_map_side[i], 0,
+//	                GL_RGB,
+//	                imageData.getTexWidth(),
+//	                imageData.getTexHeight(),
+//	                0, 
+//	                imageData.getDepth() == 32 ? GL_RGBA : GL_RGB,
+//	                GL_UNSIGNED_BYTE,
+//	                textureBuffer);
+		}
+        
+    	
+		
+		//TextureLoader.getTexture("JPG", in)
+		
+		//BufferedImage img = ImageIO.read(new File(directory, "top.jpg"));
+		//Raster r = img.getData();
+		// r.
+		//glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, internalformat, width, height, border, format, type, pixels_buffer_offset);
+		
+	}
 	
 	public final Matrix4f world_to_view = new Matrix4f();
 	public final Matrix4f projection = new Matrix4f();

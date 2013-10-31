@@ -36,14 +36,16 @@ void main() {
 	
 	// Calculate the dot product of the light vector and vertex normal. If the normal and light vector are
 	// pointing in the same direction then it will get max illumination.
-	float diffuse = max(dot(v_normal, lightVector), 0.5);
+	float diffuse = max(dot(v_normal, lightVector), 0.0); // lightVector vec3(0, 0, 1)
 
-	vec4 envcolor = texture(U_ENV_CUBE, v_world_normal);
-
+	vec4 envcolor = texture(U_ENV_CUBE, v_world_normal); //v_world_normal);
 	
 	// Add attenuation.
-	diffuse = diffuse * (1.0 / (1.0 + (0.25 * distance * distance)));
+	//diffuse = diffuse * (1.0 / (1.0 + (0.25 * distance * distance)));
 	
 	// Multiply the color by the diffuse illumination level to get final output color.
-	out_color = mix(v_color * diffuse, envcolor, 0.5); //mix(vec3(v_color) * diffuse, out_color, v_color[3]); //
+	out_color = envcolor; // mix(v_color * diffuse, envcolor, 0.5); //mix(vec3(v_color) * diffuse, out_color, v_color[3]); //
+	//out_color = v_color * diffuse;
+	//out_color = vec4(distance, distance, distance, 1);
+	//out_color = vec4(diffuse, diffuse, diffuse, 1);
 }
