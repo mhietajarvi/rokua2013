@@ -39,7 +39,7 @@ import org.lwjgl.util.vector.Matrix4f;
  * 
  * 
  */
-public class RenderProgram {
+public class Program {
 
 	static String read(String file) throws IOException {
 		return new String(Files.readAllBytes(Paths.get(file)),
@@ -51,6 +51,8 @@ public class RenderProgram {
 		U_MODEL_TO_WORLD_M4,
 		U_MODEL_TO_VIEW_M4,
 		U_MODEL_TO_PROJECTED_M4,
+		
+		U_EYE_WORLD_POS_3F,
 
 		// I don't yet know how to elegantly handle different light types
 		// supported by shaders...
@@ -62,12 +64,12 @@ public class RenderProgram {
 		U_ENV_CUBE
 	}
 
-	public static enum Attribute {
-		POSITION_3F, NORMAL_3F, COLOR_4F
-	}
+//	public static enum Attribute {
+//		POSITION_3F, NORMAL_3F, COLOR_4F
+//	}
 
 	private int uIndices[] = new int[Uniform.values().length];
-	private int aIndices[] = new int[Attribute.values().length];
+	//private int aIndices[] = new int[Attribute.values().length];
 
 	private int program;
 	private int vertexShader;
@@ -75,10 +77,10 @@ public class RenderProgram {
 	private FloatBuffer buf = BufferUtils.createFloatBuffer(4*4);
 	
 
-	public RenderProgram(String vertexShaderFile, String fragmentShaderFile) throws IOException {
+	public Program(String vertexShaderFile, String fragmentShaderFile) throws IOException {
 		
 		Arrays.fill(uIndices, -1);
-		Arrays.fill(aIndices, -1);
+		//Arrays.fill(aIndices, -1);
 		
 		Log.d("Loading vertex shader: %s", vertexShaderFile);
 		vertexShader = loadShader(GL_VERTEX_SHADER, read(vertexShaderFile));
@@ -87,6 +89,10 @@ public class RenderProgram {
 		program = glCreateProgram();
 		glAttachShader(program, vertexShader);
 		glAttachShader(program, fragmentShader);
+		
+		for (Attribute a : Attribute.values()) {
+			glBindAttribLocation(program, a.ordinal(), a.name());
+		}
 		glLinkProgram(program);
 		
 		if (glGetProgrami(program, GL_LINK_STATUS) != GL_TRUE) {
@@ -105,8 +111,10 @@ public class RenderProgram {
 
 		sb.setLength(0);
 		for (Attribute a : Attribute.values()) {
+			//int index = a.ordinal();
+			//glBindAttribLocation(program, index, a.name());
 			int index = glGetAttribLocation(program, a.name());
-			setIndex(a, index);
+			//setIndex(a, index);
 			sb.append(a+":"+index+" ");
 		}
 		Log.d("Attributes: %s", sb);
@@ -116,13 +124,13 @@ public class RenderProgram {
 		uIndices[u.ordinal()] = index;
 	}
 
-	protected void setIndex(Attribute a, int index) {
-		aIndices[a.ordinal()] = index;
-	}
-
-	public int getIndex(Attribute a) {
-		return aIndices[a.ordinal()];
-	}
+//	protected void setIndex(Attribute a, int index) {
+//		aIndices[a.ordinal()] = index;
+//	}
+//
+//	public int getIndex(Attribute a) {
+//		return aIndices[a.ordinal()];
+//	}
 
 	public int getIndex(Uniform u) {
 		return uIndices[u.ordinal()];
@@ -145,67 +153,114 @@ public class RenderProgram {
 		Log.d("Compiled shader %s, source size = %s bytes", shader, shaderCode.length());
 		return shader;
 	}
+	
+	View view;
+	Matrix4f model_to_view = new Matrix4f();
+	Matrix4f model_to_projected = new Matrix4f();
 
-	public void useWith(View view, Matrix4f model_to_world) {
+	public void useView(View view) {
 		
+		this.view = view;
 		glUseProgram(program);
-
-		// Bind the texture
-//		GL13.glActiveTexture(GL13.GL_TEXTURE0);
-//		GL11.glBindTexture(GL11.GL_TEXTURE_2D, texIds[textureSelector]);
 		
-		// Bind to the VAO that has all the information about the vertices
-//		GL30.glBindVertexArray(vaoId);
-//		GL20.glEnableVertexAttribArray(0);
-//		GL20.glEnableVertexAttribArray(1);
-//		GL20.glEnableVertexAttribArray(2);
-		
-		// Bind to the index VBO that has all the information about the order of the vertices
-		//GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, vboiId);
-		
-		// Draw the vertices
-		//GL11.glDrawElements(GL11.GL_TRIANGLES, indicesCount, GL11.GL_UNSIGNED_BYTE, 0);
-    	
-    	//LOG.error("drawSetupP: glUseProgram({})", program);
-    	//glUseProgram(program);
-    	
-		Matrix4f model_to_view = Matrix4f.mul(view.world_to_view, model_to_world, null);
-		Matrix4f model_to_projected = Matrix4f.mul(view.projection, model_to_view, null);
-		
-    	// pass in the light position and transformations
-    	
-    	buf.clear();
-    	model_to_world.store(buf);
-    	buf.flip();
-        glUniformMatrix4(getIndex(Uniform.U_MODEL_TO_WORLD_M4), false, buf);
-		
-    	buf.clear();
-        model_to_view.store(buf);
-    	buf.flip();
-        glUniformMatrix4(getIndex(Uniform.U_MODEL_TO_VIEW_M4), false, buf);
-		
-    	buf.clear();
-        model_to_projected.store(buf);
-    	buf.flip();
-        glUniformMatrix4(getIndex(Uniform.U_MODEL_TO_PROJECTED_M4), false, buf);
-
         // map current lights to uniforms provided by shader program
         glUniform3f(getIndex(Uniform.U_POINT_LIGHT_1_3F), view.point_light_1.x, view.point_light_1.y, view.point_light_1.z);
         
         glUniform1i(getIndex(Uniform.U_ENV_CUBE), view.envCubeSampler);
-        
-        // glUniform
-        
-//        state.vVLight
-//        
-//        glUniform3f(hLightPos, state.vVLight.x, state.vVLight.y, state.vVLight.z);
-//        
-//        //state.vVLight.store(lightBuf);
+	}
+	
+	public void setUniform(Uniform u, Matrix4f data) {
+		
+		int index = getIndex(u);
+		if (index != -1) {
+	    	buf.clear();
+	    	data.store(buf);
+	    	buf.flip();
+	        glUniformMatrix4(index, false, buf);
+		}
+	}
+
+	public void setUniform(Uniform u, float v0, float v1, float v2) {
+		
+		int index = getIndex(u);
+		if (index != -1) {
+	        glUniform3f(index, v0, v1, v2);
+		}
+	}
+	
+	public void useModelTransform(Matrix4f model_to_world) {
+		
+		Matrix4f.mul(view.world_to_view, model_to_world, model_to_view);
+		Matrix4f.mul(view.projection, model_to_view, model_to_projected);
+		
+
+		glUseProgram(program);
+		
+		setUniform(Uniform.U_MODEL_TO_WORLD_M4, model_to_world);
+		setUniform(Uniform.U_MODEL_TO_VIEW_M4, model_to_view);
+		setUniform(Uniform.U_MODEL_TO_PROJECTED_M4, model_to_projected);
+		setUniform(Uniform.U_EYE_WORLD_POS_3F, view.view_to_world.m30, view.view_to_world.m31, view.view_to_world.m32);
+	}
+	
+//	public void useWith(View view, Matrix4f model_to_world) {
+//		
+//		glUseProgram(program);
+//
+//		// TODO: we only need to update model-dependent uniforms for every new object
+//		// 
+//		
+//		// Bind the texture
+////		GL13.glActiveTexture(GL13.GL_TEXTURE0);
+////		GL11.glBindTexture(GL11.GL_TEXTURE_2D, texIds[textureSelector]);
+//		
+//		// Bind to the VAO that has all the information about the vertices
+////		GL30.glBindVertexArray(vaoId);
+////		GL20.glEnableVertexAttribArray(0);
+////		GL20.glEnableVertexAttribArray(1);
+////		GL20.glEnableVertexAttribArray(2);
+//		
+//		// Bind to the index VBO that has all the information about the order of the vertices
+//		//GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, vboiId);
+//		
+//		// Draw the vertices
+//		//GL11.glDrawElements(GL11.GL_TRIANGLES, indicesCount, GL11.GL_UNSIGNED_BYTE, 0);
+//    	
+//    	//LOG.error("drawSetupP: glUseProgram({})", program);
+//    	//glUseProgram(program);
+//		
+//		Matrix4f model_to_view = Matrix4f.mul(view.world_to_view, model_to_world, null);
+//		Matrix4f model_to_projected = Matrix4f.mul(view.projection, model_to_view, null);
+//		
+//    	// pass in the light position and transformations
+//    	
+//    	buf.clear();
+//    	model_to_world.store(buf);
+//    	buf.flip();
+//        glUniformMatrix4(getIndex(Uniform.U_MODEL_TO_WORLD_M4), false, buf);
+//		
+//    	buf.clear();
+//        model_to_view.store(buf);
+//    	buf.flip();
+//        glUniformMatrix4(getIndex(Uniform.U_MODEL_TO_VIEW_M4), false, buf);
+//		
+//    	buf.clear();
+//        model_to_projected.store(buf);
+//    	buf.flip();
+//        glUniformMatrix4(getIndex(Uniform.U_MODEL_TO_PROJECTED_M4), false, buf);
 //
 //        
-//        //GLES20.glUniform3fv(hLightPos, 1, state.vVLight, 0);
-//        glUniform3f(hLightPos, state.vVLight.x, state.vVLight.y, state.vVLight.z);
-	}
+//        // glUniform
+//        
+////        state.vVLight
+////        
+////        glUniform3f(hLightPos, state.vVLight.x, state.vVLight.y, state.vVLight.z);
+////        
+////        //state.vVLight.store(lightBuf);
+////
+////        
+////        //GLES20.glUniform3fv(hLightPos, 1, state.vVLight, 0);
+////        glUniform3f(hLightPos, state.vVLight.x, state.vVLight.y, state.vVLight.z);
+//	}
 
 	// LOG.error("loaded vertexShader "+ vertexShader+"\n"+vertexShaderCode);
 	// LOG.error("loaded fragmentShader "+

@@ -8,7 +8,7 @@ package test;
  */
 public interface Geometry {
 
-	Drawable prepare(RenderProgram program);
+	//Drawable prepare(Program program);
 	//void unbind();
 	//void draw();
 }

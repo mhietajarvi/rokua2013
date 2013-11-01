@@ -6,16 +6,16 @@ package test;
 public class TransformedRenderable {
 
 	private final Drawable renderable;
-	private final Transform transform;
+	private final Animation animation;
 
-	public TransformedRenderable(Drawable renderable, Transform transform) {
+	public TransformedRenderable(Drawable renderable, Animation animation) {
 		this.renderable = renderable;
-		this.transform = transform;
+		this.animation = animation;
 	}
 	public Drawable getRenderable() {
 		return renderable;
 	}
-	public Transform getTransform() {
-		return transform;
+	public Animation getTransform() {
+		return animation;
 	}
 }

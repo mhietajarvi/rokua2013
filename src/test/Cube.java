@@ -1,7 +1,6 @@
 package test;
 
 import java.nio.FloatBuffer;
-import java.util.Arrays;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
@@ -10,10 +9,8 @@ import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.util.vector.Vector3f;
 
-import test.RenderProgram.Attribute;
 
-
-public class Cube implements Geometry {
+public class Cube implements Drawable {
 
 	//private FloatBuffer vertexBuffer;
 	//private ShortBuffer indexBuffer;
@@ -23,6 +20,8 @@ public class Cube implements Geometry {
 //	private final FloatBuffer normals;
 	
 	private final FloatBuffer attribs;
+	int vao;
+	int vbo;
 
 	private int triCount;
 	/**
@@ -117,13 +116,32 @@ public class Cube implements Geometry {
 //		//colors = ByteBuffer.allocateDirect(clr.length*3*4*4).order(ByteOrder.nativeOrder()).asFloatBuffer();
 //		Util.put(clr, colors).flip();
 
-		posOffset = attribs.position();
+		int posOffset = attribs.position();
 		Util.put(pos, attribs);
-		nrmOffset = attribs.position();
+		int nrmOffset = attribs.position();
 		Util.put(nrm, attribs);
-		clrOffset = attribs.position();
+		int clrOffset = attribs.position();
 		Util.put(clr, attribs);
 		attribs.flip();
+
+		vao = GL30.glGenVertexArrays();
+		GL30.glBindVertexArray(vao);
+		
+		// create buffer and upload all vertex attributes
+		vbo = GL15.glGenBuffers();
+		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
+		GL15.glBufferData(GL15.GL_ARRAY_BUFFER, attribs, GL15.GL_STREAM_DRAW);
+
+		//int nindex = program.getIndex(Attribute.NORMAL_3F);
+		//int cindex = program.getIndex(Attribute.COLOR_4F);
+		GL20.glVertexAttribPointer(Attribute.POSITION_3F.ordinal(), 3, GL11.GL_FLOAT, false, 0, posOffset*4);
+		GL20.glEnableVertexAttribArray(Attribute.POSITION_3F.ordinal());
+		GL20.glVertexAttribPointer(Attribute.NORMAL_3F.ordinal(), 3, GL11.GL_FLOAT, false, 0, nrmOffset*4);
+		GL20.glEnableVertexAttribArray(Attribute.NORMAL_3F.ordinal());
+		GL20.glVertexAttribPointer(Attribute.COLOR_4F.ordinal(), 4, GL11.GL_FLOAT, false, 0, clrOffset*4);
+		GL20.glEnableVertexAttribArray(Attribute.COLOR_4F.ordinal());
+		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+		GL30.glBindVertexArray(0);
 		
 		/*
 		float[] f = new float[attribs.limit()];
@@ -195,52 +213,64 @@ public class Cube implements Geometry {
 //		indexBuffer.put(i);
 //		indexBuffer.position(0);
 	}
-	int posOffset;
-	int nrmOffset;
-	int clrOffset;
+//	int posOffset;
+//	int nrmOffset;
+//	int clrOffset;
+
+//	@Override
+//	public Drawable prepare(Program program) {
+//
+//		return new DrawableGeometry(program) {
+//			
+//			int vao;
+//			int vbo;
+//			{
+//				vao = GL30.glGenVertexArrays();
+//				GL30.glBindVertexArray(vao);
+//				
+//				// create buffer and upload all vertex attributes
+//				vbo = GL15.glGenBuffers();
+//				GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
+//				GL15.glBufferData(GL15.GL_ARRAY_BUFFER, attribs, GL15.GL_STREAM_DRAW);
+//	
+//				int nindex = program.getIndex(Attribute.NORMAL_3F);
+//				int cindex = program.getIndex(Attribute.COLOR_4F);
+//				GL20.glVertexAttribPointer(program.getIndex(Attribute.POSITION_3F), 3, GL11.GL_FLOAT, false, 0, posOffset*4);
+//				GL20.glEnableVertexAttribArray(program.getIndex(Attribute.POSITION_3F));
+//				if (nindex >= 0) {
+//					GL20.glVertexAttribPointer(nindex, 3, GL11.GL_FLOAT, false, 0, nrmOffset*4);
+//					GL20.glEnableVertexAttribArray(nindex);
+//				}
+//				if (cindex >= 0) {
+//					GL20.glVertexAttribPointer(cindex, 4, GL11.GL_FLOAT, false, 0, clrOffset*4);
+//					GL20.glEnableVertexAttribArray(cindex);
+//				}
+//				GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+//				GL30.glBindVertexArray(0);
+//			}
+//			@Override
+//			protected void drawGeometry() {
+//				GL30.glBindVertexArray(vao);
+//				GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, triCount*3);
+//			}
+//			@Override
+//			public void destroy() {
+//				GL30.glDeleteVertexArrays(vao);
+//				GL15.glDeleteBuffers(vbo);
+//			}
+//		};
+//	}
 
 	@Override
-	public Drawable prepare(RenderProgram program) {
+	public void destroy() {
+		GL30.glDeleteVertexArrays(vao);
+		GL15.glDeleteBuffers(vbo);
+	}
 
-		return new DrawableGeometry(program) {
-			
-			int vao;
-			int vbo;
-			{
-				vao = GL30.glGenVertexArrays();
-				GL30.glBindVertexArray(vao);
-				
-				// create buffer and upload all vertex attributes
-				vbo = GL15.glGenBuffers();
-				GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
-				GL15.glBufferData(GL15.GL_ARRAY_BUFFER, attribs, GL15.GL_STREAM_DRAW);
-	
-				int nindex = program.getIndex(Attribute.NORMAL_3F);
-				int cindex = program.getIndex(Attribute.COLOR_4F);
-				GL20.glVertexAttribPointer(program.getIndex(Attribute.POSITION_3F), 3, GL11.GL_FLOAT, false, 0, posOffset*4);
-				GL20.glEnableVertexAttribArray(program.getIndex(Attribute.POSITION_3F));
-				if (nindex >= 0) {
-					GL20.glVertexAttribPointer(nindex, 3, GL11.GL_FLOAT, false, 0, nrmOffset*4);
-					GL20.glEnableVertexAttribArray(nindex);
-				}
-				if (cindex >= 0) {
-					GL20.glVertexAttribPointer(cindex, 4, GL11.GL_FLOAT, false, 0, clrOffset*4);
-					GL20.glEnableVertexAttribArray(cindex);
-				}
-				GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
-				GL30.glBindVertexArray(0);
-			}
-			@Override
-			protected void drawGeometry() {
-				GL30.glBindVertexArray(vao);
-				GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, triCount*3);
-			}
-			@Override
-			public void destroy() {
-				GL30.glDeleteVertexArrays(vao);
-				GL15.glDeleteBuffers(vbo);
-			}
-		};
+	@Override
+	public void draw() {
+		GL30.glBindVertexArray(vao);
+		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, triCount*3);
 	}
 
 //	@Override

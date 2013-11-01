@@ -1,32 +1,30 @@
 package test;
 
-import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL12.*;
-import static org.lwjgl.opengl.GL13.*;
-import static org.lwjgl.opengl.GL14.*;
-import static org.lwjgl.opengl.GL15.*;
-import static org.lwjgl.opengl.GL20.*;
-import static org.lwjgl.opengl.GL21.*;
-import static org.lwjgl.opengl.GL30.*;
-import static org.lwjgl.opengl.GL31.*;
-import static org.lwjgl.opengl.GL32.*;
+import static org.lwjgl.opengl.GL11.GL_LINEAR;
+import static org.lwjgl.opengl.GL11.GL_RGB;
+import static org.lwjgl.opengl.GL11.GL_TEXTURE_MAG_FILTER;
+import static org.lwjgl.opengl.GL11.GL_TEXTURE_MIN_FILTER;
+import static org.lwjgl.opengl.GL11.GL_UNSIGNED_BYTE;
+import static org.lwjgl.opengl.GL11.glBindTexture;
+import static org.lwjgl.opengl.GL11.glGenTextures;
+import static org.lwjgl.opengl.GL11.glTexImage2D;
+import static org.lwjgl.opengl.GL11.glTexParameteri;
+import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
+import static org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP;
+import static org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_X;
+import static org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y;
+import static org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z;
+import static org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X;
+import static org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Y;
+import static org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Z;
+import static org.lwjgl.opengl.GL13.glActiveTexture;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.Random;
 
-import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL33;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
-import org.newdawn.slick.opengl.ImageIOImageData;
 
 // things that should stay static for one frame
 public class View {
@@ -59,24 +57,29 @@ public class View {
     	
     	envCubeTexture = glGenTextures();
 		glBindTexture(GL_TEXTURE_CUBE_MAP, envCubeTexture);
+		int filter = GL_LINEAR;
+		//int filter = GL_NEAREST;
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, filter);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, filter);
+        
+		//Random r = new Random(234);
 		
-		Random r = new Random(234);
+//		WTF? this works if side == 1, what is going on???
 		
-		WTF? this works if side == 1, what is going on???
+		int side = 256;
+//		int n = side*side*3;
+//		byte[] tmp = new byte[n];
 		
-		int side = 3;
-		int n = side*side*3;
-		byte[] tmp = new byte[n];
-    	
 		for (int i = 0; i < 6; i++) {
 
-			ByteBuffer b = BufferUtils.createByteBuffer(n); //imageData.loadImage(new BufferedInputStream(is), false, null); // new int[]{}
-			r.nextBytes(tmp);
-			b.put(tmp);
+//			ByteBuffer b = BufferUtils.createByteBuffer(n); //imageData.loadImage(new BufferedInputStream(is), false, null); // new int[]{}
+//			r.nextBytes(tmp);
+//			b.put(tmp);
 //			for (int j = 0; j < 4; j++) {
 //				b.put(new byte[]{ (byte)r.nextBytes(bytes);Radn55, (byte)55, (byte)255 });
 //			}
-			b.flip();
+//			b.flip();
+			
 	        glTexImage2D(cube_map_side[i], 0,
             GL_RGB,
             side,
@@ -84,7 +87,7 @@ public class View {
             0, 
             GL_RGB,
             GL_UNSIGNED_BYTE,
-            b);
+            new ImageGen(side, side).img1().buffer());
 			
 			
 //			InputStream is = new FileInputStream(new File(directory, cube_map_file[i]));
@@ -134,10 +137,10 @@ public class View {
 	}
 	
 	public final Matrix4f world_to_view = new Matrix4f();
+	public final Matrix4f view_to_world = new Matrix4f();
 	public final Matrix4f projection = new Matrix4f();
 	
-	// lights temporarily here...
-	// point light in view space
+	// point light in world space
 	public final Vector4f point_light_1 = new Vector4f(); 
 
 	View() {
@@ -152,7 +155,7 @@ public class View {
 		return (float)(1f / Math.tan(angle));
 	}
 	
-	void setViewLight(float x, float y, float z) {
+	void setWorldLight(float x, float y, float z) {
 
 		// directly set a point light in view coordinates
 		point_light_1.x = x;
@@ -164,13 +167,13 @@ public class View {
 	void setView() {
 		// e.g. look at something from somewhere 
 	}
-
+	
 	void translateView(float dx, float dy, float dz) {
 		
 		Matrix4f translation = new Matrix4f();
 		translation.translate(new Vector3f(dx, dy, dz));
 		Matrix4f.mul(translation, world_to_view, world_to_view);
-		orthogonalize();
+		recalc();
 	}
 	
 	void rotateView(float dx, float dy) {
@@ -181,11 +184,13 @@ public class View {
 		Matrix4f rotation = new Matrix4f();
 		rotation.rotate(len, vec);
 		Matrix4f.mul(rotation, world_to_view, world_to_view);
-		orthogonalize();
+		recalc();
 	}
 	
-	void orthogonalize() {
+	private void recalc() {
 		// TODO: orthogonalize world_to_view matrix to reset accumulated error
+		// TODO: or better yet, use lookat vector and keep view x axis parallel to world x-z plane
+		Matrix4f.invert(world_to_view, view_to_world);
 	}
 
 	void setProjection(float fieldOfView, float nearPlane, float farPlane, int viewportWidth, int viewportHeight) {

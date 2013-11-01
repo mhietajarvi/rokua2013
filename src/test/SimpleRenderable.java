@@ -6,14 +6,14 @@ package test;
  */
 public abstract class SimpleRenderable implements Drawable {
 
-	RenderProgram program;
+	Program program;
 	
-	public RenderProgram getProgram() {
+	public Program getProgram() {
 		return program;
 	}
 
 	// return self for setter chaining
-	public SimpleRenderable setProgram(RenderProgram program) {
+	public SimpleRenderable setProgram(Program program) {
 		this.program = program;
 		return this;
 	}

@@ -48,7 +48,7 @@ import android.opengl.Matrix;
 */
 
 // TODO:
-// - wall renderables with intuitive positioning (transform)
+// - wall renderables with intuitive positioning (animation)
 // - do we need better camera control?
 // - 3d-ball with actual shading
 // - anti-alias (low priority, might not even work)
@@ -79,7 +79,7 @@ class RokuaRenderer {
 	
 	// assumes quite a bit about the programs...
 	/*
-	public class Program extends RenderProgram {
+	public class Program extends Program {
 		
 	    private int program;
 	    //private int vertexHandle;
@@ -133,14 +133,14 @@ class RokuaRenderer {
 	        //LOG.error("loaded vertexShader "+ vertexShader+"\n"+vertexShaderCode);
 	        //LOG.error("loaded fragmentShader "+ fragmentShader+"\n"+fragmentShaderCode);
 	        
-	        program = glCreateProgram();             // create empty OpenGL RenderProgram
+	        program = glCreateProgram();             // create empty OpenGL Program
 	        glAttachShader(program, vertexShader);   // add the vertex shader to program
 	        glAttachShader(program, fragmentShader); // add the fragment shader to program
 	        glLinkProgram(program);                  // creates OpenGL program executables
 	        
 	        // get handle to the vertex shader's members
 	        //vertexHandle = GLES20.glGetAttribLocation(program, "position");	
-	        //transformHandle = GLES20.glGetUniformLocation(program, "transform");
+	        //transformHandle = GLES20.glGetUniformLocation(program, "animation");
 	        // these return -1 if location is not available
 	        
 	        hMVPMatrix = glGetUniformLocation(program, "u_MVPMatrix");
@@ -160,7 +160,7 @@ class RokuaRenderer {
 	    
 /*	    
 
- for each renderable object that has own model transform
+ for each renderable object that has own model animation
  we have to recalc matrixes
  
   

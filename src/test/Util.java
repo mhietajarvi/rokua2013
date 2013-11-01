@@ -57,7 +57,7 @@ public class Util {
 		return buf;
 	}
 
-	// transform tri coordinates
+	// animation tri coordinates
 	//       *0
 	//     
 	//   *1      *2
