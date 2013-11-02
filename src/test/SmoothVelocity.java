@@ -65,9 +65,9 @@ public class SmoothVelocity implements Interpolator {
 	float dt1;
 
 	@Override
-	public PV interpolate(final float p0, final float v0, final float p2, final float v2) {
+	public Func.PV interpolate(final float p0, final float v0, final float p2, final float v2) {
 		
-		return new PV() {
+		return new Func.PV() {
 
 			final float a0;
 			final float a1;
@@ -212,12 +212,24 @@ public class SmoothVelocity implements Interpolator {
 		m.m02 = 0;             m.m12 = 0.5f*dt2*dt2; m.m22 = dt2; m.m32 = 1;
 		m.m03 = 0;             m.m13 = dt2;          m.m23 = 1;   m.m33 = 0;
 		
-		Log.d("time matrix:\n"+m);
+		//Log.d("time matrix:\n"+m);
 		m.invert();
-		Log.d("time matrix inverse:\n"+m);
+		//Log.d("time matrix inverse:\n"+m);
 		
 		//Matrix4f m = new Matrix4f();
 		
+	}
+
+	@Override
+	public double t0() {
+		// TODO Auto-generated method stub
+		return t0;
+	}
+
+	@Override
+	public double t2() {
+		// TODO Auto-generated method stub
+		return t2;
 	}
 
 }

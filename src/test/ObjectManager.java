@@ -1,44 +1,76 @@
 package test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-import org.lwjgl.util.vector.Matrix4f;
+import org.lwjgl.util.vector.*;
 
 import test.Program.Uniform;
 
 public class ObjectManager {
 
+	public interface Event {
+		// return true if event has completed
+		boolean update(double t, long time_ns);
+	}
+	
 	public class Object {
-		// can specify various parameters at time-based functions
+		// can specify various parameters as time-based functions
 		// attach directly to shader uniforms?
 		
-		private FuncMatrix fTransform;
+		private Func.M4 fTransform;
 		private Program program;       // can be null
 		private Drawable drawable;     // can be null
 		private Object parent;         // can be null
 		private List<Object> objects;  // can be null
+		private List<Event> events;    // can be null
 		// directly contol simple variables 
-		private Map<Uniform, FuncFloat> funcFloatMap;
+		private Map<Uniform, Func.P> ufP;
 
 		// (hmmm...  objects list is not really needed as we keep objects
 		//  in byProgram map for drawing and only traverse object transformation
 		//  hierarchy through parent pointers)
 		Matrix4f transform = new Matrix4f();
 		long transform_time_ns = 0;
-		
-		Object set(Uniform u, FuncFloat func) {
-			if (funcFloatMap == null) {
-				funcFloatMap = new IdentityHashMap<>();
+
+		void updateEvents(double t, long time_ns) {
+			if (events != null) {
+				for (Event e : events) {
+					if (e.update(t, time_ns)) {
+						events.remove(e);
+						updateEvents(t, time_ns);
+						return;
+					}
+				}
 			}
-			funcFloatMap.put(u, func);
+		}
+		Vector3f getPosition(long time_ns) {
+			Matrix4f tf = getTransform(time_ns);
+			return new Vector3f(tf.m30, tf.m31, tf.m32);
+		}
+		
+		void clearEvents() {
+			if (events != null) {
+				events.clear();
+			}
+		}
+		
+		Object add(Event event) {
+			if (this.events == null) {
+				this.events = new ArrayList<>();
+			}
+			events.add(event);
 			return this;
 		}
 		
-		Object set(FuncMatrix fTransform) {
+		Object set(Uniform u, Func.P func) {
+			if (ufP == null) {
+				ufP = new IdentityHashMap<>();
+			}
+			ufP.put(u, func);
+			return this;
+		}
+		
+		Object set(Func.M4 fTransform) {
 			this.fTransform = fTransform;
 			transform_time_ns = 0;
 			return this;
@@ -47,7 +79,7 @@ public class ObjectManager {
 		Matrix4f getTransform(long time_ns) {
 
 			if (transform_time_ns != time_ns) {
-				fTransform.valueAt(time_ns/1000000000.0, transform);
+				fTransform.m4(time_ns/1000000000.0, transform);
 				//transform.setIdentity();
 				//for (Animation a : animation) {
 				//	a.updateTransform(time_ns, transform);
@@ -72,10 +104,10 @@ public class ObjectManager {
 			this.parent = parent;
 			transform_time_ns = 0; // invalidates transform
 		}
-		public Object(FuncMatrix fTransform) {
+		public Object(Func.M4 fTransform) {
 			this(null, null, fTransform);
 		}
-		public Object(Program program, Drawable drawable, FuncMatrix fTransform) {
+		public Object(Program program, Drawable drawable, Func.M4 fTransform) {
 			this.fTransform = fTransform;
 			this.program = program;
 			this.drawable = drawable;
@@ -85,12 +117,18 @@ public class ObjectManager {
 //			this.objects = objects.length > 0 ? Arrays.asList(objects) : null;
 			register(this);
 		}
+		// attach object to registered object -> register object
+		// detach object ->  unregister object
+		public void detach() {
+			setParent(null);
+		}
+		
 		public Object attach(Object... objects) {
 			for (Object obj : objects) {
 				obj.setParent(this);
 			}
 			if (this.objects == null) {
-				this.objects = Arrays.asList(objects);
+				this.objects = new ArrayList<>(Arrays.asList(objects));
 			} else {
 				this.objects.addAll(Arrays.asList(objects));
 			}
@@ -133,12 +171,13 @@ public class ObjectManager {
 				for (Object object : e2.getValue()) {
 					
 					program.useModelTransform(object.getTransform(time_ns));
-					if (object.funcFloatMap != null) {
-						for (Map.Entry<Uniform, FuncFloat> e : object.funcFloatMap.entrySet()) {
-							program.bind(e.getKey(), e.getValue().valueAt(t));
+					if (object.ufP != null) {
+						for (Map.Entry<Uniform, Func.P> e : object.ufP.entrySet()) {
+							program.bind(e.getKey(), e.getValue().p(t));
 						}
 					}
 					drawable.draw();
+					object.updateEvents(t, time_ns);
 				}
 			}
 			// program.getIndex(Uniform.)

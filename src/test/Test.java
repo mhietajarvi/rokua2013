@@ -11,11 +11,9 @@ import static org.lwjgl.opengl.GL30.*;
 import static org.lwjgl.opengl.GL31.*;
 import static org.lwjgl.opengl.GL32.*;
 
+import java.io.*;
 import java.nio.FloatBuffer;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.input.Keyboard;
@@ -28,7 +26,9 @@ import org.lwjgl.util.glu.GLU;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 
+import test.ObjectManager.Event;
 import test.ObjectManager.Object;
+import test.Program.Uniform;
 
 
 /*
@@ -115,11 +115,72 @@ public class Test {
 		//glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, internalformat, width, height, border, format, type, pixels_buffer_offset);
 		
 	}*/
+	static Random rnd = new Random(2434);
+	
+	Vector3f v = new Vector3f();
+	
+	public static void rnd(Vector3f v, float r) {
+		v.x = (rnd.nextFloat() - 0.5f)*2*r;
+		v.y = (rnd.nextFloat() - 0.5f)*2*r;
+		v.z = (rnd.nextFloat() - 0.5f)*2*r;
+	}
 	
 	public static void main(String[] args) throws Exception {
+		new Test().run();
+	}
 
+	int N = 1000;
+	
+	Deque<Object> reserve = new ArrayDeque<>(N);
+	Deque<Object> fallingBlocks = new ArrayDeque<>(N);
+
+	final Func.M4 farAway = new Simple.Position(0, new Vector3f(10000, 0, 0));
+
+	int nextFb = 0;
+	double fbInterval = 0.01;
+	
+	Object fbTransition(final Object obj) {
+		final double t0 = (nextFb++)*fbInterval;
+		final double t1 = t0 + 2;
+		obj.add(new Event() {
+			//double t0 = (nextFb++)*fbInterval;
+    		public boolean update(double t, long time_ns) {
+    			if (t >= t0) {
+    				// start from random position
+					obj.set(new Simple.Position(t, new Vector3f(10 - rnd.nextFloat()*6, 5, -rnd.nextFloat()*6), new Vector3f(0, -30, 0), new Vector3f(0, 0, 0)));
+					Interpolator ip = new SmoothVelocity(t, t+0.7);
+					obj.set(Uniform.U_COLOR_MULT_F, ip.interpolate(1, 20, 1, 0));
+					fallingBlocks.add(obj);
+					
+					obj.add(new Event() {
+						@Override
+						public boolean update(double t, long time_ns) {
+							if (t >= t1) {
+								// remove falling block
+								obj.set(farAway);
+								fallingBlocks.remove(obj);
+								fbTransition(obj);
+								return true;
+							}
+							return false;
+						}
+					});
+					
+    				return true;
+    			}
+    			return false;
+    		}
+    	});
+		
+		
+    	return obj;
+    }
+	
+	
+	public void run() throws Exception {
+		
 		Display.setDisplayMode(new DisplayMode(600, 300));
-		Display.setVSyncEnabled(false);
+		Display.setVSyncEnabled(true);
 		Display.setTitle("Rokua2013");
 		Display.create(new PixelFormat(), new ContextAttribs(3, 2).withProfileCore(true).withForwardCompatible(true));
 		Display.setResizable(true);
@@ -160,9 +221,13 @@ public class Test {
 		exitOnGLError("D");
 
 		View view = new View();
-
+		view.translateView(20, 20, -40);
+		
 		// ugly as hell
-		view.loadCubeTexture("assets/images/env2");
+		view.loadCubeTexture("assets/images/env1");
+		
+    	PointCloudFont font = new PointCloudFont("Monaco", 20, 1.2f, 1.2f, 1.2f, 2);
+		
 		
 		//view.setProjection(60, 0.1f, 100f, Display.getWidth(), Display.getHeight());
 		
@@ -191,7 +256,6 @@ public class Test {
 
 
         // new parent object has independent animation (e.g. scroller)
-        // 
         
         
         // if b-spline (or other scripted) animation takes over, how to integrate with 
@@ -210,28 +274,86 @@ public class Test {
         // animate current position to target using splines? or something else?
         
         
+        // cubes appear, tumble and fall under gravity, disappear
+        // text steals these cubes
+        // text scrolls and after a while text cubes disappear
+        
+        
         // animation effects (accelerate to distance, wobble, etc)
         // chaining effects (timeline)
         // applying effects in bulk
         
 		Random rnd = new Random(2434);
         ObjectManager om = new ObjectManager();
-
-        for (int i = 0; i < 5000; i++) {
-        	Position p = new Position((rnd.nextFloat() - 0.5f)*20, (rnd.nextFloat() - 0.5f)*30, (rnd.nextFloat() - 0.5f)*20);
-        	Rotation r = new Rotation((rnd.nextFloat() - 0.5f)*20, (rnd.nextFloat() - 0.5f)*30, (rnd.nextFloat() - 0.5f)*20, rnd.nextFloat());
-			Vector3f vv = new Vector3f((rnd.nextFloat() - 0.5f)*20, (rnd.nextFloat() - 0.0f)*0.2f, (rnd.nextFloat() - 0.5f)*29);
+        
+        Vector3f p0 = new Vector3f();
+        Vector3f v0 = new Vector3f();
+        Vector3f p1 = new Vector3f();
+        Vector3f v1 = new Vector3f();
+		Interpolator ip = new SmoothVelocity(0, 10);
+		
+		
+		
+		// falling blocks are generated at fixed rate, so we
+		
+        for (int i = 0; i < N; i++) {
+        	final Object obj = fbTransition(om.new Object(glass, cube, farAway));
+        	//reserve.add(obj);
+        	
+        	// objects in reserve will become fallingblocks after a while
+        }
+        	
+        
+        /*
+        	//Position p = new Position((rnd.nextFloat() - 0.5f)*20, (rnd.nextFloat() - 0.5f)*30, (rnd.nextFloat() - 0.5f)*20);
+        	//Rotation r = new Rotation((rnd.nextFloat() - 0.5f)*20, (rnd.nextFloat() - 0.5f)*30, (rnd.nextFloat() - 0.5f)*20, rnd.nextFloat());
+			//Vector3f vv = new Vector3f((rnd.nextFloat() - 0.5f)*20, (rnd.nextFloat() - 0.0f)*0.2f, (rnd.nextFloat() - 0.5f)*29);
 			
         	//Velocity v = new Velocity(vv);
         	//Acceleration a = new Acceleration(new Vector3f(0, -1, 0));
         	// r, p, v, a
         	// position_ip 
         	// funcmatrix
+        	// combine effects in order
+			
+        	rnd(p0, 10);
+        	rnd(p1, 0);
+        	VectorPV pos = new VectorPV(ip, p0, v0, p1, v1);
+			
+			// sv.interpolate(p0, v0, p2, v2)
         	
-        	// combine effects in order 
+        	final Object obj = om.new Object(glass, cube, new PosRot(pos, null)).set(Uniform.U_COLOR_MULT_F, ip.interpolate(1, 0, 1, 0));
+        	fallingBlocks.add(obj);
         	
-        	// om.new Object(glass, cube, );
-        }
+        	obj.add(new ObjectManager.Event() {
+				@Override
+
+				public boolean update(double t, long time_ns) {
+					if (t > 5) {
+						Vector3f pos = obj.getPosition(time_ns);
+						Log.d("pos: "+pos);
+						obj.set(new Simple.Position(t, obj.getPosition(time_ns), new Vector3f(0, -2, 0)));
+						return true;
+					}
+					return false;
+				}
+			});
+        	
+        	// someone has to run event checks on objects?
+        	
+        }*/
+        
+        // things to demo:
+        //  instanced drawing 
+        //  reflection/refraction
+        //  animation control
+
+        // cubes flash to existence and start to drop
+        // at some point they smoothly become part of a letter which forms a traditional sine-scroller (or similar)
+        
+        // 
+        // how? 
+		// Object scroller = om.new Object(new Simple.Position(t, new Vector3f(0,0,0), new Vector3f(-5,0,0)));
         
         
 //    	float red = 0.9f;
@@ -246,10 +368,13 @@ public class Test {
     	long prevPrintFrame = frame;
     	List<Long> frameTimes = new ArrayList<>(500);
     	
+    	int textPos = 0;
+    	
     	float scale = 0.005f;
 		while (!Display.isCloseRequested()) {
 
-			
+			final long time_ns = frameStart - initTime;
+			final double t = time_ns/1000000000.0;
 			// start two processes in parallel:
 			// 1) start rendering current state
 			// 2) perform user input checking and
@@ -264,23 +389,77 @@ public class Test {
 					view.translateView(dx*scale, dy*scale, 0);
 				}
 			}
-			if (Keyboard.isKeyDown(Keyboard.KEY_A)) {
-				view.translateView(0.1f, 0, 0);
+			//if (Keyboard.isKeyDown(Keyboard.KEY))
+			if (!Keyboard.isKeyDown(Keyboard.KEY_RSHIFT) && !Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)) {
+				if (Keyboard.isKeyDown(Keyboard.KEY_A)) {
+					view.translateView(0.1f, 0, 0);
+				}
+				if (Keyboard.isKeyDown(Keyboard.KEY_D)) {
+					view.translateView(-0.1f, 0, 0);
+				}
+				if (Keyboard.isKeyDown(Keyboard.KEY_W)) {
+					view.translateView(0,  0, 0.1f);
+				}
+				if (Keyboard.isKeyDown(Keyboard.KEY_S)) {
+					view.translateView(0,  0, -0.1f);
+				}
 			}
-			if (Keyboard.isKeyDown(Keyboard.KEY_D)) {
-				view.translateView(-0.1f, 0, 0);
-			}
-			if (Keyboard.isKeyDown(Keyboard.KEY_W)) {
-				view.translateView(0,  0, 0.1f);
-			}
-			if (Keyboard.isKeyDown(Keyboard.KEY_S)) {
-				view.translateView(0,  0, -0.1f);
+			while (Keyboard.next()) {
+				char ch = Keyboard.getEventCharacter();
+				boolean down = Keyboard.getEventKeyState();
+				Log.d("event char: "+ch+(down ? "DOWN" : "UP"));
+				if (!down || !Character.isUpperCase(ch)) {
+					continue;
+				}
+				Interpolator ip1 = new SmoothVelocity(t, t+1);
+				
+				// set 
+//	        	rnd(p0, 10);
+//	        	rnd(p1, 0);
+//	        	VectorPV pos = new VectorPV(ip, p0, v0, p1, v1);
+				
+				// register event to call for after condition 
+				// e.g. object position or time exceeds some limit
+
+				Object parent = om.new Object(new Simple.Position(t, new Vector3f(-4,-17,0), new Vector3f(-7,0,0)));
+				Composer comp = new Composer(parent, font.getGlyph(ch));
+				int n = 0;
+				while (!fallingBlocks.isEmpty() && comp.hasRoom()) {
+					final Object obj = fallingBlocks.remove();
+					obj.clearEvents();
+					obj.add(new Event() {
+						@Override
+						public boolean update(double _t, long time_ns) {
+	
+							if (_t > (t + 10)) {
+								obj.detach();
+								obj.set(farAway);
+								fbTransition(obj);
+								return true;
+								// remove from composer after a while
+								// and put back to fallingBlocks
+								
+								// TODO: if composer is empty, it and parent can be deleted
+								
+							}
+							
+							return false;
+						}
+					});
+					comp.attach(ip1, time_ns, obj);
+					n++;
+				}
+				Log.d("attached and removed "+n+" objects, "+fallingBlocks.size()+" remaining");
+				//textPos++;
+				
+				// place composite in scene
+				// detach some objects and put them into composite
 			}
 			
 			view.setWorldLight(1, (float)(2*Math.sin(frame*0.01f)), -1);
 
 			
-			view.setProjection(60, 0.1f, 100f, Display.getWidth(), Display.getHeight());
+			view.setProjection(60, 0.1f, 1000f, Display.getWidth(), Display.getHeight());
 			glViewport(0, 0, Display.getWidth(), Display.getHeight());
 
 			// manually updating view for every program... refactor when there are more programs
@@ -324,7 +503,7 @@ public class Test {
 			bgRect.draw();
 			
 	        glEnable(GL_DEPTH_TEST);
-			om.drawObjectsAt(view, frameStart - initTime);
+			om.drawObjectsAt(view, time_ns);
 			
 			// if drawing multiple things with same program,
 			// pass all transformations and drawables to program in one call

@@ -1,30 +1,19 @@
 package test;
 
-import static org.lwjgl.opengl.GL11.GL_LINEAR;
-import static org.lwjgl.opengl.GL11.GL_RGB;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_MAG_FILTER;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_MIN_FILTER;
-import static org.lwjgl.opengl.GL11.GL_UNSIGNED_BYTE;
-import static org.lwjgl.opengl.GL11.glBindTexture;
-import static org.lwjgl.opengl.GL11.glGenTextures;
-import static org.lwjgl.opengl.GL11.glTexImage2D;
-import static org.lwjgl.opengl.GL11.glTexParameteri;
-import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
-import static org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP;
-import static org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_X;
-import static org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y;
-import static org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z;
-import static org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X;
-import static org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Y;
-import static org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Z;
-import static org.lwjgl.opengl.GL13.glActiveTexture;
+import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL13.*;
 
-import java.io.IOException;
-import java.util.Arrays;
+import java.awt.*;
+import java.awt.color.*;
+import java.awt.image.*;
+import java.io.*;
+import java.nio.*;
+import java.util.*;
 
-import org.lwjgl.util.vector.Matrix4f;
-import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
+import javax.imageio.*;
+
+import org.lwjgl.*;
+import org.lwjgl.util.vector.*;
 
 // things that should stay static for one frame
 public class View {
@@ -35,22 +24,76 @@ public class View {
 	// load cube texture to texture unit 0
 	public void loadTexture(String file, int textureUnit) {
 		
+		// TODO
+		
 	}
+	
 	int[] cube_map_side = {
 			GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
 			GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
 			GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z };
 	String[] cube_map_file = {
 			"right.jpg", "left.jpg", "top.jpg", "bottom.jpg", "back.jpg", "front.jpg" };
+	// temp fix to flip the images i am using...
+	boolean[] cube_map_fx = { true,true,false,false,true,true };
+	boolean[] cube_map_fy = { false,false,true,true,false,false };
 	
-	byte[] gen = new byte[1024*1024*3];
-	{
-		Arrays.fill(gen, (byte)255);
-	}
+//	byte[] gen = new byte[1024*1024*3];
+//	{
+//		Arrays.fill(gen, (byte)255);
+//	}
 
 	// load texture to: texture unit, generate id
 	// select texture to be used
+    private static final  ColorModel glColorModel =
+    		new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),
+                new int[] {8,8,8,0},
+                false,
+                false,
+                ComponentColorModel.OPAQUE,
+                DataBuffer.TYPE_BYTE);
 	
+    static class LoadedImage {
+    	final int width;
+    	final int height;
+    	final ByteBuffer buffer;
+    	LoadedImage(InputStream is, boolean flipx, boolean flipy) throws IOException {
+    	
+			BufferedImage bi = ImageIO.read(new BufferedInputStream(is));
+			
+			width = bi.getWidth();
+			height = bi.getHeight();
+			
+	        WritableRaster raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,width,height,3,null);
+	        BufferedImage texImage = new BufferedImage(glColorModel,raster,false,new Hashtable());
+	        // copy the source image into the produced image
+	        Graphics2D g = (Graphics2D) texImage.getGraphics();
+	        
+	//        if (flipped) {
+	//        	g.scale(1,-1);
+	//        	g.drawImage(image,0,-height,null);
+	//        } else {
+	       	g.scale(flipx ? -1 : 1, flipy ? -1 : 1);
+	        g.drawImage(bi,flipx ? -width : 0,flipy ? -height : 0,null);
+	//        }
+//	        g.setFont(new Font("Monospaced", Font.PLAIN, 100));
+//	        g.setColor(Color.WHITE);
+//	        g.drawChars(new char[]{'A','B','C','D','E'}, 0, 5, 50, 50);
+	       
+	        	
+	        byte[] data = ((DataBufferByte) texImage.getRaster().getDataBuffer()).getData(); 
+	        
+	        buffer = BufferUtils.createByteBuffer(data.length); //ByteBuffer.allocateDirect(data.length); 
+	        //buffer.order(ByteOrder.nativeOrder()); 
+	        buffer.put(data, 0, data.length); 
+	        buffer.flip();
+	        g.dispose();
+            
+    	// ByteBuffer textureBuffer = imageData.loadImage(new BufferedInputStream(is), false, null); // new int[]{}
+    	}
+    }
+
+    
 	public void loadCubeTexture(String directory) throws IOException {
 
     	glActiveTexture(GL_TEXTURE0 + envCubeSampler);
@@ -66,12 +109,13 @@ public class View {
 		
 //		WTF? this works if side == 1, what is going on???
 		
-		int side = 256;
+		int side = 1024; //256;
 //		int n = side*side*3;
 //		byte[] tmp = new byte[n];
 		
 		for (int i = 0; i < 6; i++) {
 
+			
 //			ByteBuffer b = BufferUtils.createByteBuffer(n); //imageData.loadImage(new BufferedInputStream(is), false, null); // new int[]{}
 //			r.nextBytes(tmp);
 //			b.put(tmp);
@@ -79,7 +123,7 @@ public class View {
 //				b.put(new byte[]{ (byte)r.nextBytes(bytes);Radn55, (byte)55, (byte)255 });
 //			}
 //			b.flip();
-			
+/*			
 	        glTexImage2D(cube_map_side[i], 0,
             GL_RGB,
             side,
@@ -87,18 +131,46 @@ public class View {
             0, 
             GL_RGB,
             GL_UNSIGNED_BYTE,
-            new ImageGen(side, side).img1().buffer());
+            new ImageGen(side, side).img1((i+1)*5000, (i+1)*50).buffer());
+*/			
 			
+			InputStream is = new FileInputStream(new File(directory, cube_map_file[i]));
 			
-//			InputStream is = new FileInputStream(new File(directory, cube_map_file[i]));
 //			ImageIOImageData imageData = new ImageIOImageData();
+//			BufferedImage bi = ImageIO.read(new BufferedInputStream(is));
+//			
+//			int w = bi.getWidth();
+//			int h = bi.getHeight();
+//	        WritableRaster raster;
+//	        BufferedImage texImage;
+//            raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,w,h,3,null);
+//            texImage = new BufferedImage(glColorModel,raster,false,new Hashtable());
+//            // copy the source image into the produced image
+//            Graphics2D g = (Graphics2D) texImage.getGraphics();
+//            
+////            if (flipped) {
+////            	g.scale(1,-1);
+////            	g.drawImage(image,0,-height,null);
+////            } else {
+//            	g.drawImage(bi,0,0,null);
+////            }
+//                byte[] data = ((DataBufferByte) texImage.getRaster().getDataBuffer()).getData(); 
+//                
+//                ByteBuffer imageBuffer = ByteBuffer.allocateDirect(data.length); 
+//                imageBuffer.order(ByteOrder.nativeOrder()); 
+//                imageBuffer.put(data, 0, data.length); 
+//                imageBuffer.flip();
+//                g.dispose();
+//                
 //	    	ByteBuffer textureBuffer = imageData.loadImage(new BufferedInputStream(is), false, null); // new int[]{}
-//	    	
-//	    	Log.d("tex: pos="+textureBuffer.position()+", limit="+textureBuffer.limit());
+			LoadedImage img = new LoadedImage(is, cube_map_fx[i], cube_map_fy[i]);
+			//ByteBuffer textureBuffer = loadImage(is); // new int[]{}
+	    	
+	    	Log.d("tex: pos="+img.buffer.position()+", limit="+img.buffer.limit());
 //	    	Log.d("img: width="+imageData.getWidth()+", height="+imageData.getHeight());
 //	    	Log.d("img: twidth="+imageData.getTexWidth()+", theight="+imageData.getTexHeight());
 //	    	Log.d("img: depth="+imageData.getDepth());
-//
+
 //	    	textureBuffer.put(gen);
 //	    	textureBuffer.rewind();
 //	    	
@@ -110,19 +182,19 @@ public class View {
 //	    	}
 //	    	
 //	    	textureBuffer.rewind();
-//	    	
-//	    	// GL33.glGenSamplers()
-//	    	
-//			glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-//			
-//	        glTexImage2D(cube_map_side[i], 0,
-//	                GL_RGB,
-//	                imageData.getTexWidth(),
-//	                imageData.getTexHeight(),
-//	                0, 
-//	                imageData.getDepth() == 32 ? GL_RGBA : GL_RGB,
-//	                GL_UNSIGNED_BYTE,
-//	                textureBuffer);
+	    	
+	    	// GL33.glGenSamplers()
+	    	
+			glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+			
+	        glTexImage2D(cube_map_side[i], 0,
+	                GL_RGB,
+	                img.width,
+	                img.height,
+	                0, 
+	                GL_RGB,
+	                GL_UNSIGNED_BYTE,
+	                img.buffer);
 		}
         
     	

@@ -30,8 +30,8 @@ public class ImageGen {
 		b.flip();
 		return b;
 	}
-	public ImageGen img1() {
-		randomAdditiveLines(4000, 10, 10, 10, 0);
+	public ImageGen img1(int lines, int len) {
+		randomAdditiveLines(lines, len, 25, 25, 42);
 		return this;
 	}
 	
@@ -41,7 +41,7 @@ public class ImageGen {
 			int x = rnd.nextInt(w);
 			int y = rnd.nextInt(h);
 			int stride = bpp*((i & 1) == 0 ? 1 : w);
-			addline(x, y, len, 50, 50, 0, stride);
+			addline(x, y, len, r, g, b, stride);
 		}
 		return this;
 	}

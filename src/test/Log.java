@@ -1,5 +1,7 @@
 package test;
 
+import java.lang.Object;
+
 public class Log {
 	
 	public static boolean d = true;

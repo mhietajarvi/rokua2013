@@ -9,7 +9,7 @@ public class Sandbox {
 		double t1 = 1;
 		
 		SmoothVelocity s = new SmoothVelocity(t0, t1);
-		PV ip = s.interpolate(0,-100, -1,-100);
+		Func.PV ip = s.interpolate(0,-100, -1,-100);
 		
 		int n = 10;
 		

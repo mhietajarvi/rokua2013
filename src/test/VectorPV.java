@@ -4,7 +4,7 @@ import org.lwjgl.util.vector.*;
 
 public class VectorPV {
 
-	PV x,y,z;
+	Func.PV x,y,z;
 	
 	VectorPV(Interpolator ip, Vector3f p0, Vector3f v0, Vector3f p1, Vector3f v1) {
 		x = ip.interpolate(p0.x, v0.x, p1.x, v1.x);
