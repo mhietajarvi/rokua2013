@@ -8,33 +8,50 @@ import java.util.Map;
 
 import org.lwjgl.util.vector.Matrix4f;
 
+import test.Program.Uniform;
+
 public class ObjectManager {
 
 	public class Object {
-		private Animation[] animation;
+		// can specify various parameters at time-based functions
+		// attach directly to shader uniforms?
+		
+		private FuncMatrix fTransform;
 		private Program program;       // can be null
 		private Drawable drawable;     // can be null
 		private Object parent;         // can be null
 		private List<Object> objects;  // can be null
+		// directly contol simple variables 
+		private Map<Uniform, FuncFloat> funcFloatMap;
+
 		// (hmmm...  objects list is not really needed as we keep objects
 		//  in byProgram map for drawing and only traverse object transformation
 		//  hierarchy through parent pointers)
 		Matrix4f transform = new Matrix4f();
 		long transform_time_ns = 0;
 		
-		void setAnimation(Animation... animation) {
-			this.animation = animation;
-			//transform.setIdentity();
+		Object set(Uniform u, FuncFloat func) {
+			if (funcFloatMap == null) {
+				funcFloatMap = new IdentityHashMap<>();
+			}
+			funcFloatMap.put(u, func);
+			return this;
+		}
+		
+		Object set(FuncMatrix fTransform) {
+			this.fTransform = fTransform;
 			transform_time_ns = 0;
+			return this;
 		}
 		
 		Matrix4f getTransform(long time_ns) {
 
 			if (transform_time_ns != time_ns) {
-				transform.setIdentity();
-				for (Animation a : animation) {
-					a.updateTransform(time_ns, transform);
-				}
+				fTransform.valueAt(time_ns/1000000000.0, transform);
+				//transform.setIdentity();
+				//for (Animation a : animation) {
+				//	a.updateTransform(time_ns, transform);
+				//}
 				transform_time_ns = time_ns;
 				if (parent != null) {
 					// apply parent transformation permanently
@@ -55,11 +72,11 @@ public class ObjectManager {
 			this.parent = parent;
 			transform_time_ns = 0; // invalidates transform
 		}
-		public Object(Animation animation) {
-			this(null, null, animation);
+		public Object(FuncMatrix fTransform) {
+			this(null, null, fTransform);
 		}
-		public Object(Program program, Drawable drawable, Animation... animation) {
-			this.animation = animation;
+		public Object(Program program, Drawable drawable, FuncMatrix fTransform) {
+			this.fTransform = fTransform;
 			this.program = program;
 			this.drawable = drawable;
 //			for (Object obj : objects) {
@@ -107,13 +124,20 @@ public class ObjectManager {
 
 	// simple draw initially, instanced later (needs program support!)
 	public void drawObjectsAt(View view, long time_ns) {
+		double t = time_ns/1000000000.0;
 		for (Map.Entry<Program,Map<Drawable, List<Object>>> e1 : byProgram.entrySet()) {
 			Program program = e1.getKey();
 			program.useView(view);
 			for (Map.Entry<Drawable, List<Object>> e2 : e1.getValue().entrySet()) {
 				Drawable drawable = e2.getKey();
 				for (Object object : e2.getValue()) {
+					
 					program.useModelTransform(object.getTransform(time_ns));
+					if (object.funcFloatMap != null) {
+						for (Map.Entry<Uniform, FuncFloat> e : object.funcFloatMap.entrySet()) {
+							program.bind(e.getKey(), e.getValue().valueAt(t));
+						}
+					}
 					drawable.draw();
 				}
 			}

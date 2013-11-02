@@ -53,6 +53,8 @@ public class Program {
 		U_MODEL_TO_PROJECTED_M4,
 		
 		U_EYE_WORLD_POS_3F,
+		
+		U_COLOR_MULT_F,
 
 		// I don't yet know how to elegantly handle different light types
 		// supported by shaders...
@@ -167,6 +169,10 @@ public class Program {
         glUniform3f(getIndex(Uniform.U_POINT_LIGHT_1_3F), view.point_light_1.x, view.point_light_1.y, view.point_light_1.z);
         
         glUniform1i(getIndex(Uniform.U_ENV_CUBE), view.envCubeSampler);
+	}
+	
+	public void bind(Uniform u, float value) {
+        glUniform1f(getIndex(u), value);
 	}
 	
 	public void setUniform(Uniform u, Matrix4f data) {

@@ -189,7 +189,27 @@ public class Test {
         glCullFace(GL_FRONT);
         //glDisable(GL_CULL_FACE);
 
-        // free-fall animation 
+
+        // new parent object has independent animation (e.g. scroller)
+        // 
+        
+        
+        // if b-spline (or other scripted) animation takes over, how to integrate with 
+        // current motion state (no discontinuities for v/p, possibly not even for a)
+        
+        // buffer of disabled objects
+        // re-use them
+        
+        // animate creation with a flash
+        
+        // free-fall
+        
+        // at some point, objects become part of larger object
+        // and are assigned positions inside it
+        
+        // animate current position to target using splines? or something else?
+        
+        
         // animation effects (accelerate to distance, wobble, etc)
         // chaining effects (timeline)
         // applying effects in bulk
@@ -197,14 +217,20 @@ public class Test {
 		Random rnd = new Random(2434);
         ObjectManager om = new ObjectManager();
 
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 5000; i++) {
         	Position p = new Position((rnd.nextFloat() - 0.5f)*20, (rnd.nextFloat() - 0.5f)*30, (rnd.nextFloat() - 0.5f)*20);
         	Rotation r = new Rotation((rnd.nextFloat() - 0.5f)*20, (rnd.nextFloat() - 0.5f)*30, (rnd.nextFloat() - 0.5f)*20, rnd.nextFloat());
 			Vector3f vv = new Vector3f((rnd.nextFloat() - 0.5f)*20, (rnd.nextFloat() - 0.0f)*0.2f, (rnd.nextFloat() - 0.5f)*29);
-        	Velocity v = new Velocity(vv);
-        	Acceleration a = new Acceleration(new Vector3f(0, -1, 0));
+			
+        	//Velocity v = new Velocity(vv);
+        	//Acceleration a = new Acceleration(new Vector3f(0, -1, 0));
+        	// r, p, v, a
+        	// position_ip 
+        	// funcmatrix
         	
-        	om.new Object(glass, cube, r, p, v, a);
+        	// combine effects in order 
+        	
+        	// om.new Object(glass, cube, );
         }
         
         
