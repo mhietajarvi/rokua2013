@@ -67,6 +67,10 @@ import test.Program.Uniform;
  */
 
 public class Test {
+	
+	Test() throws Exception {
+		
+	}
 
 	static FloatBuffer floatBuffer(float... data) {
 		FloatBuffer buf = BufferUtils.createFloatBuffer(data.length);
@@ -138,6 +142,9 @@ public class Test {
 
 	int nextFb = 0;
 	double fbInterval = 0.01;
+
+	double nextCharMinTime = 0;
+	double charInterval = 1.3;
 	
 	Object fbTransition(final Object obj) {
 		final double t0 = (nextFb++)*fbInterval;
@@ -176,10 +183,56 @@ public class Test {
     	return obj;
     }
 	
+    Vector3f p0 = new Vector3f();
+    Vector3f v0 = new Vector3f();
+    Vector3f p1 = new Vector3f();
+    Vector3f v1 = new Vector3f();
+
+    ObjectManager om = new ObjectManager();
+    
+	//Interpolator ip = new SmoothVelocity(0, 10);
+
+	Object someObj = om.new Object(null);
+
+	PointCloudFont font = new PointCloudFont("Monaco", 20, 1.2f, 1.2f, 1.2f, 1);
+
+	
+	void createChar(final double t, long time_ns, char ch) {
+		
+		Interpolator ip1 = new SmoothVelocity(t, t+1);
+		Object parent = om.new Object(new Simple.Position(t, new Vector3f(-4,-30,0), new Vector3f(-10,0,0)));
+		Composer comp = new Composer(parent, font.getGlyph(ch));
+		int n = 0;
+		while (!fallingBlocks.isEmpty() && comp.hasRoom()) {
+			final Object obj = fallingBlocks.remove();
+			obj.clearEvents();
+			obj.add(new Event() {
+				@Override
+				public boolean update(double _t, long time_ns) {
+
+					if (_t > (t + 8)) {
+						Vector3f pos = obj.getPosition(time_ns);
+						obj.detach();
+						Vector3f v = new Vector3f();
+						Vector3f a = new Vector3f(0, -10, 0);
+						rnd(v, 10);
+						v.x -= 10;
+						obj.set(new Simple.Position(_t, pos, v, a));
+						fbTransition(obj);
+						return true;
+					}
+					return false;
+				}
+			});
+			comp.attach(ip1, time_ns, obj);
+			n++;
+		}
+		//Log.d("attached and removed "+n+" objects, "+fallingBlocks.size()+" remaining");
+	}
 	
 	public void run() throws Exception {
 		
-		Display.setDisplayMode(new DisplayMode(600, 300));
+		Display.setDisplayMode(new DisplayMode(800, 400));
 		Display.setVSyncEnabled(true);
 		Display.setTitle("Rokua2013");
 		Display.create(new PixelFormat(), new ContextAttribs(3, 2).withProfileCore(true).withForwardCompatible(true));
@@ -214,19 +267,18 @@ public class Test {
         Cube cube = new Cube(0.5f);
         
         // TODO: specify background rect in projected space to 
-        Rect bgRect = new Rect(1, 1, -0.5f);
+        Rect bgRect = new Rect(2, 1, -0.5f);
         
 		exitOnGLError("C");
         //Drawable dCube = cube.prepare(p);
 		exitOnGLError("D");
 
 		View view = new View();
-		view.translateView(20, 20, -40);
+		view.translateView(40, 30, -50);
 		
 		// ugly as hell
 		view.loadCubeTexture("assets/images/env1");
 		
-    	PointCloudFont font = new PointCloudFont("Monaco", 20, 1.2f, 1.2f, 1.2f, 2);
 		
 		
 		//view.setProjection(60, 0.1f, 100f, Display.getWidth(), Display.getHeight());
@@ -280,18 +332,10 @@ public class Test {
         
         
         // animation effects (accelerate to distance, wobble, etc)
-        // chaining effects (timeline)
+        // chaining effects new Object(timeline)
         // applying effects in bulk
         
-		Random rnd = new Random(2434);
-        ObjectManager om = new ObjectManager();
-        
-        Vector3f p0 = new Vector3f();
-        Vector3f v0 = new Vector3f();
-        Vector3f p1 = new Vector3f();
-        Vector3f v1 = new Vector3f();
-		Interpolator ip = new SmoothVelocity(0, 10);
-		
+		//Random rnd = new Random(2434);
 		
 		
 		// falling blocks are generated at fixed rate, so we
@@ -370,6 +414,7 @@ public class Test {
     	
     	int textPos = 0;
     	
+    	
     	float scale = 0.005f;
 		while (!Display.isCloseRequested()) {
 
@@ -405,52 +450,31 @@ public class Test {
 				}
 			}
 			while (Keyboard.next()) {
-				char ch = Keyboard.getEventCharacter();
+				final char ch = Keyboard.getEventCharacter();
 				boolean down = Keyboard.getEventKeyState();
 				Log.d("event char: "+ch+(down ? "DOWN" : "UP"));
 				if (!down || !Character.isUpperCase(ch)) {
 					continue;
 				}
-				Interpolator ip1 = new SmoothVelocity(t, t+1);
-				
-				// set 
-//	        	rnd(p0, 10);
-//	        	rnd(p1, 0);
-//	        	VectorPV pos = new VectorPV(ip, p0, v0, p1, v1);
-				
-				// register event to call for after condition 
-				// e.g. object position or time exceeds some limit
-
-				Object parent = om.new Object(new Simple.Position(t, new Vector3f(-4,-17,0), new Vector3f(-7,0,0)));
-				Composer comp = new Composer(parent, font.getGlyph(ch));
-				int n = 0;
-				while (!fallingBlocks.isEmpty() && comp.hasRoom()) {
-					final Object obj = fallingBlocks.remove();
-					obj.clearEvents();
-					obj.add(new Event() {
-						@Override
-						public boolean update(double _t, long time_ns) {
-	
-							if (_t > (t + 10)) {
-								obj.detach();
-								obj.set(farAway);
-								fbTransition(obj);
-								return true;
-								// remove from composer after a while
-								// and put back to fallingBlocks
-								
-								// TODO: if composer is empty, it and parent can be deleted
-								
-							}
-							
-							return false;
-						}
-					});
-					comp.attach(ip1, time_ns, obj);
-					n++;
+				final double t0;
+				if (t >= nextCharMinTime) {
+					t0 = t;
+				} else {
+					t0 = nextCharMinTime;
 				}
-				Log.d("attached and removed "+n+" objects, "+fallingBlocks.size()+" remaining");
-				//textPos++;
+				nextCharMinTime = t0 + charInterval;
+				
+				someObj.add(new Event() {
+					@Override
+					public boolean update(double _t, long time_ns) {
+						if (_t >= t0) {
+							createChar(_t, time_ns, ch);
+							return true;
+						}
+						return false;
+					}
+				});
+				
 				
 				// place composite in scene
 				// detach some objects and put them into composite

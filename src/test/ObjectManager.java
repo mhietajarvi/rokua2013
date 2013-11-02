@@ -79,11 +79,10 @@ public class ObjectManager {
 		Matrix4f getTransform(long time_ns) {
 
 			if (transform_time_ns != time_ns) {
+				if (fTransform == null) {
+					return parent.getTransform(time_ns);
+				}
 				fTransform.m4(time_ns/1000000000.0, transform);
-				//transform.setIdentity();
-				//for (Animation a : animation) {
-				//	a.updateTransform(time_ns, transform);
-				//}
 				transform_time_ns = time_ns;
 				if (parent != null) {
 					// apply parent transformation permanently
@@ -139,6 +138,7 @@ public class ObjectManager {
 	}
 	
 	Map<Program,Map<Drawable, List<Object>>> byProgram = new IdentityHashMap<>();
+	List<Object> nonDrawables = new ArrayList<>();
 
 	private void register(Object obj) {
 		
@@ -154,10 +154,9 @@ public class ObjectManager {
 				byDrawable.put(obj.drawable, objects);
 			}
 			objects.add(obj);
+		} else {
+			nonDrawables.add(obj);
 		}
-		
-		// group by program, then by drawable
-		
 	}
 
 	// simple draw initially, instanced later (needs program support!)
@@ -182,8 +181,9 @@ public class ObjectManager {
 			}
 			// program.getIndex(Uniform.)
 		}
-		
-		
+		for (Object obj : new ArrayList<>(nonDrawables)) {
+			obj.updateEvents(t, time_ns);
+		}
 	}
 	
 	// draw objects by program/drawable to take advantage of instancing
