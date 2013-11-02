@@ -56,7 +56,8 @@ void main() {
 	//out_color = env_reflect;
 	//out_color = env_reflect * 0.2 + env_refract * 0.3 + v_color * diffuse * 0.5;
 	//out_color = env_reflect * 0.2 + v_color * diffuse * 0.8;
-	out_color = env_reflect * 0.2 + v_color * diffuse * 0.8;
+	out_color = env_reflect * 0.2 + v_color * diffuse * 0.8; // + vec4(0,0,0,0.5);
+	//out_color.w = 0.5;
 	//out_color = vec4(distance, distance, distance, 1);
 	//out_color = vec4(diffuse, diffuse, diffuse, 1);
 }

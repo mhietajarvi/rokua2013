@@ -1,22 +1,15 @@
 package test;
 
-import static org.lwjgl.opengl.GL11.GL_CULL_FACE;
-import static org.lwjgl.opengl.GL11.GL_FILL;
-import static org.lwjgl.opengl.GL11.GL_FRONT;
-import static org.lwjgl.opengl.GL11.GL_FRONT_AND_BACK;
-import static org.lwjgl.opengl.GL11.GL_NO_ERROR;
-import static org.lwjgl.opengl.GL11.GL_VERSION;
-import static org.lwjgl.opengl.GL11.glBindTexture;
-import static org.lwjgl.opengl.GL11.glCullFace;
-import static org.lwjgl.opengl.GL11.glEnable;
-import static org.lwjgl.opengl.GL11.glGetError;
-import static org.lwjgl.opengl.GL11.glGetString;
-import static org.lwjgl.opengl.GL11.glPolygonMode;
-import static org.lwjgl.opengl.GL11.glViewport;
-import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
-import static org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP;
-import static org.lwjgl.opengl.GL13.glActiveTexture;
-import static org.lwjgl.opengl.GL32.GL_TEXTURE_CUBE_MAP_SEAMLESS;
+import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL12.*;
+import static org.lwjgl.opengl.GL13.*;
+import static org.lwjgl.opengl.GL14.*;
+import static org.lwjgl.opengl.GL15.*;
+import static org.lwjgl.opengl.GL20.*;
+import static org.lwjgl.opengl.GL21.*;
+import static org.lwjgl.opengl.GL30.*;
+import static org.lwjgl.opengl.GL31.*;
+import static org.lwjgl.opengl.GL32.*;
 
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
@@ -34,6 +27,8 @@ import org.lwjgl.opengl.PixelFormat;
 import org.lwjgl.util.glu.GLU;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
+
+import test.ObjectManager.Object;
 
 
 /*
@@ -123,13 +118,12 @@ public class Test {
 	
 	public static void main(String[] args) throws Exception {
 
-		Display.setDisplayMode(new DisplayMode(300, 200));
+		Display.setDisplayMode(new DisplayMode(600, 300));
 		Display.setVSyncEnabled(false);
 		Display.setTitle("Rokua2013");
 		Display.create(new PixelFormat(), new ContextAttribs(3, 2).withProfileCore(true).withForwardCompatible(true));
 		Display.setResizable(true);
 
-		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 		
 		System.out.println("OpenGL version: " + glGetString(GL_VERSION));
 
@@ -187,26 +181,48 @@ public class Test {
 //		LOG.error("error");
 		//LogManager.
         Log.e("asdf %s", "hello");
-        
+
+        glEnable(GL_BLEND);
+		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+        glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
         glCullFace(GL_FRONT);
         //glDisable(GL_CULL_FACE);
 
+        // free-fall animation 
+        // animation effects (accelerate to distance, wobble, etc)
+        // chaining effects (timeline)
+        // applying effects in bulk
+        
+		Random rnd = new Random(2434);
+        ObjectManager om = new ObjectManager();
+
+        for (int i = 0; i < 10000; i++) {
+        	Position p = new Position((rnd.nextFloat() - 0.5f)*20, (rnd.nextFloat() - 0.5f)*30, (rnd.nextFloat() - 0.5f)*20);
+        	Rotation r = new Rotation((rnd.nextFloat() - 0.5f)*20, (rnd.nextFloat() - 0.5f)*30, (rnd.nextFloat() - 0.5f)*20, rnd.nextFloat());
+			Vector3f vv = new Vector3f((rnd.nextFloat() - 0.5f)*20, (rnd.nextFloat() - 0.0f)*0.2f, (rnd.nextFloat() - 0.5f)*29);
+        	Velocity v = new Velocity(vv);
+        	Acceleration a = new Acceleration(new Vector3f(0, -1, 0));
+        	
+        	om.new Object(glass, cube, r, p, v, a);
+        }
+        
         
 //    	float red = 0.9f;
 //    	float green = 0.2f;
 //    	float blue = 0.2f;
 
         long frame = 0;
-    	long startTime = System.nanoTime();
-    	long prevPrintTime = startTime;
+        
+    	final long initTime = System.nanoTime();
+    	long frameStart = initTime;
+    	long prevPrintTime = frameStart;
     	long prevPrintFrame = frame;
     	List<Long> frameTimes = new ArrayList<>(500);
     	
     	float scale = 0.005f;
 		while (!Display.isCloseRequested()) {
 
-			Random rnd = new Random(2434);
 			
 			// start two processes in parallel:
 			// 1) start rendering current state
@@ -242,11 +258,11 @@ public class Test {
 			glViewport(0, 0, Display.getWidth(), Display.getHeight());
 
 			// manually updating view for every program... refactor when there are more programs
-			glass.useView(view);
+			//glass.useView(view);
 			background.useView(view);
 			
-			//glClearColor(red, green, blue, 1.0f);
-			//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			glClearColor(255/255.0f, 105/255.0f, 180/255.0f, 1.0f);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			
             // rr.setLightPos(x2, y2, 3+x);
 			
@@ -273,6 +289,7 @@ public class Test {
 //			Log.d(" transformed:\n"+v);
 			
 			
+	        glDisable(GL_DEPTH_TEST);
 			background.useModelTransform(view.view_to_world);
 			
 			//Log.d("model_to_view:\n"+background.model_to_view);
@@ -280,27 +297,29 @@ public class Test {
 			
 			bgRect.draw();
 			
-
+	        glEnable(GL_DEPTH_TEST);
+			om.drawObjectsAt(view, frameStart - initTime);
+			
 			// if drawing multiple things with same program,
 			// pass all transformations and drawables to program in one call
 			
 			// 400 is bit too much
 			
-			glass.useModelTransform(new Matrix4f().translate(new Vector3f(0, 0, -2)));
-			cube.draw();
-			glass.useModelTransform(new Matrix4f().translate(new Vector3f(0, 1, -2)));
-			cube.draw();
-			glass.useModelTransform(new Matrix4f().translate(new Vector3f(0, -1, -2)));
-			cube.draw();
-			
-			for (int i = 0; i < 1000; i++) {
-				glass.useModelTransform(new Matrix4f().translate(new Vector3f((rnd.nextFloat() - 0.5f)*20, (rnd.nextFloat() - 0.5f)*20, (rnd.nextFloat() - 0.5f)*20)));
-				cube.draw();
-			}
-
-			//glass.useModelTransform(new Matrix4f().translate(new Vector3f(2, 0, -2)).rotate(frame*0.005f, new Vector3f(0, 1, 0)));
-			glass.useModelTransform(new Matrix4f().rotate(frame*0.005f, new Vector3f(0, 1, 0)).translate(new Vector3f(2, 0, -2)));
-			cube.draw();
+//			glass.useModelTransform(new Matrix4f().translate(new Vector3f(0, 0, -2)));
+//			cube.draw();
+//			glass.useModelTransform(new Matrix4f().translate(new Vector3f(0, 1, -2)));
+//			cube.draw();
+//			glass.useModelTransform(new Matrix4f().translate(new Vector3f(0, -1, -2)));
+//			cube.draw();
+//			
+//			for (int i = 0; i < 1000; i++) {
+//				glass.useModelTransform(new Matrix4f().translate(new Vector3f((rnd.nextFloat() - 0.5f)*20, (rnd.nextFloat() - 0.5f)*20, (rnd.nextFloat() - 0.5f)*20)));
+//				cube.draw();
+//			}
+//
+//			//glass.useModelTransform(new Matrix4f().translate(new Vector3f(2, 0, -2)).rotate(frame*0.005f, new Vector3f(0, 1, 0)));
+//			glass.useModelTransform(new Matrix4f().rotate(frame*0.005f, new Vector3f(0, 1, 0)).translate(new Vector3f(2, 0, -2)));
+//			cube.draw();
 			
             //List<TransformedRenderable> drawList = new LinkedList<TransformedRenderable>();
             //drawList.addAll(staticGeometry);
@@ -315,8 +334,8 @@ public class Test {
 			Display.update();
 			frame++;
 	    	long time = System.nanoTime();
-	    	frameTimes.add(time-startTime);
-	    	startTime = time;
+	    	frameTimes.add(time-frameStart);
+	    	frameStart = time;
 	    	
 	    	long d_ns = time - prevPrintTime;
 	    	if (d_ns > 2000*1000000L) {

@@ -11,21 +11,30 @@ import org.lwjgl.util.vector.Matrix4f;
 public class ObjectManager {
 
 	public class Object {
-		Animation animation;
-		Program program;       // can be null
-		Drawable drawable;     // can be null
-		Object parent;         // can be null
-		List<Object> objects;  // can be null
+		private Animation[] animation;
+		private Program program;       // can be null
+		private Drawable drawable;     // can be null
+		private Object parent;         // can be null
+		private List<Object> objects;  // can be null
 		// (hmmm...  objects list is not really needed as we keep objects
 		//  in byProgram map for drawing and only traverse object transformation
 		//  hierarchy through parent pointers)
 		Matrix4f transform = new Matrix4f();
 		long transform_time_ns = 0;
 		
+		void setAnimation(Animation... animation) {
+			this.animation = animation;
+			//transform.setIdentity();
+			transform_time_ns = 0;
+		}
+		
 		Matrix4f getTransform(long time_ns) {
 
-			if (transform == null || transform_time_ns != time_ns) {
-				animation.getTransform(time_ns, transform);
+			if (transform_time_ns != time_ns) {
+				transform.setIdentity();
+				for (Animation a : animation) {
+					a.updateTransform(time_ns, transform);
+				}
 				transform_time_ns = time_ns;
 				if (parent != null) {
 					// apply parent transformation permanently
@@ -46,18 +55,17 @@ public class ObjectManager {
 			this.parent = parent;
 			transform_time_ns = 0; // invalidates transform
 		}
-		public Object(Animation animation, Object... objects) {
-			this(animation, null, null, objects);
+		public Object(Animation animation) {
+			this(null, null, animation);
 		}
-		public Object(Animation animation, Program program,
-				Drawable drawable, Object... objects) {
+		public Object(Program program, Drawable drawable, Animation... animation) {
 			this.animation = animation;
 			this.program = program;
 			this.drawable = drawable;
-			for (Object obj : objects) {
-				obj.setParent(this);
-			}
-			this.objects = objects.length > 0 ? Arrays.asList(objects) : null;
+//			for (Object obj : objects) {
+//				obj.setParent(this);
+//			}
+//			this.objects = objects.length > 0 ? Arrays.asList(objects) : null;
 			register(this);
 		}
 		public Object attach(Object... objects) {
