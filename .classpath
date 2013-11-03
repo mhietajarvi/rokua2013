@@ -9,5 +9,6 @@
 			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="rokua2013/libs/native/windows"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="libs/slick-util.jar" sourcepath="libs/src/java"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
