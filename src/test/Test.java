@@ -214,9 +214,10 @@ public class Test {
 						Vector3f pos = obj.getPosition(time_ns);
 						obj.detach();
 						Vector3f v = new Vector3f();
-						Vector3f a = new Vector3f(0, -10, 0);
+						Vector3f a = new Vector3f(0, -20, 0);
 						rnd(v, 10);
-						v.x -= 10;
+						v.x -= 20;
+						v.z -= 200;
 						obj.set(new Simple.Position(_t, pos, v, a));
 						fbTransition(obj);
 						return true;
@@ -232,8 +233,9 @@ public class Test {
 	
 	public void run() throws Exception {
 		
-		Display.setDisplayMode(new DisplayMode(800, 400));
+		//Display.setDisplayMode(new DisplayMode(800, 400));
 		Display.setVSyncEnabled(true);
+		Display.setFullscreen(true);
 		Display.setTitle("Rokua2013");
 		Display.create(new PixelFormat(), new ContextAttribs(3, 2).withProfileCore(true).withForwardCompatible(true));
 		Display.setResizable(true);
@@ -434,26 +436,27 @@ public class Test {
 					view.translateView(dx*scale, dy*scale, 0);
 				}
 			}
+			float step = 0.3f;
 			//if (Keyboard.isKeyDown(Keyboard.KEY))
 			if (!Keyboard.isKeyDown(Keyboard.KEY_RSHIFT) && !Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)) {
 				if (Keyboard.isKeyDown(Keyboard.KEY_A)) {
-					view.translateView(0.1f, 0, 0);
+					view.translateView(step, 0, 0);
 				}
 				if (Keyboard.isKeyDown(Keyboard.KEY_D)) {
-					view.translateView(-0.1f, 0, 0);
+					view.translateView(-step, 0, 0);
 				}
 				if (Keyboard.isKeyDown(Keyboard.KEY_W)) {
-					view.translateView(0,  0, 0.1f);
+					view.translateView(0,  0, step);
 				}
 				if (Keyboard.isKeyDown(Keyboard.KEY_S)) {
-					view.translateView(0,  0, -0.1f);
+					view.translateView(0,  0, -step);
 				}
 			}
 			while (Keyboard.next()) {
 				final char ch = Keyboard.getEventCharacter();
 				boolean down = Keyboard.getEventKeyState();
 				Log.d("event char: "+ch+(down ? "DOWN" : "UP"));
-				if (!down || !Character.isUpperCase(ch)) {
+				if (!down || !(Character.isUpperCase(ch) || Character.isSpace(ch))) {
 					continue;
 				}
 				final double t0;

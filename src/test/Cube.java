@@ -48,14 +48,21 @@ public class Cube implements Drawable {
 				{ 4,0,3,7 },
 				{ 1,5,6,2 }
 		};
+		
+		float[] fc = new float[]{ 0.5f, 0.5f, 0.6f, 1.0f};
 		float[][] faceColors = new float[][] {
-				{ 1.0f, 0.0f, 0.0f, 1.0f },
-				{ 0.0f, 1.0f, 0.0f, 1.0f },
-				{ 0.0f, 0.0f, 1.0f, 1.0f },
-				{ 1.0f, 1.0f, 0.0f, 1.0f },
-				{ 0.0f, 1.0f, 1.0f, 1.0f },
-				{ 1.0f, 0.0f, 1.0f, 1.0f }
-		};
+//				{ 1.0f, 0.0f, 0.0f, 1.0f },
+//				{ 0.0f, 1.0f, 0.0f, 1.0f },
+//				{ 0.0f, 0.0f, 1.0f, 1.0f },
+//				{ 1.0f, 1.0f, 0.0f, 1.0f },
+//				{ 0.0f, 1.0f, 1.0f, 1.0f },
+//				{ 1.0f, 0.0f, 1.0f, 1.0f }
+				fc,
+				fc,
+				fc,
+				fc,
+				fc,
+				fc		};
 		
 		Vector3f[] faceNormals = new Vector3f[faces.length];
 		
