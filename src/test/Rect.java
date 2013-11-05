@@ -7,6 +7,7 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL31;
 
 
 public class Rect implements Drawable {
@@ -44,6 +45,12 @@ public class Rect implements Drawable {
 		GL30.glBindVertexArray(vao);
 		GL11.glDrawArrays(GL11.GL_TRIANGLE_STRIP, 0, 4);
 	}
+
+	@Override
+	public void drawInstanced(int count) {
+		GL30.glBindVertexArray(vao);
+		GL31.glDrawArraysInstanced(GL11.GL_TRIANGLE_STRIP, 0, 4, count);
+	}
 	
 	@Override
 	public void destroy() {
@@ -51,5 +58,6 @@ public class Rect implements Drawable {
 		GL30.glDeleteVertexArrays(vao);
 		GL15.glDeleteBuffers(vbo);
 	}
+
 
 }

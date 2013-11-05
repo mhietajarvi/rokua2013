@@ -4,7 +4,9 @@ precision mediump float;
 uniform vec3 U_POINT_LIGHT_1_3F;  // The position of light in world space.
 uniform vec3 U_EYE_WORLD_POS_3F;     // The position of eye in world space.
 uniform samplerCube U_ENV_CUBE;
-uniform float U_COLOR_MULT_F;     // The position of eye in world space.
+
+//in float v_color_mult;
+
 
 in vec3 v_world_position;      // Interpolated position for this fragment.
 in vec4 v_color;         // This is the color from the vertex shader interpolated across the triangle per fragment.
@@ -59,7 +61,7 @@ void main() {
 	//out_color = env_reflect * 0.2 + v_color * diffuse * 0.8;
 	out_color = env_reflect * 0.2 + v_color * diffuse * 0.8; // + vec4(0,0,0,0.5);
 	
-	out_color = out_color * U_COLOR_MULT_F;
+//	out_color = out_color * v_color_mult;
 	
 	//out_color.w = 0.5;
 	//out_color = vec4(distance, distance, distance, 1);

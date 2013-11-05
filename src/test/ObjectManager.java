@@ -17,21 +17,23 @@ public class ObjectManager {
 		// can specify various parameters as time-based functions
 		// attach directly to shader uniforms?
 		
-		private Func.M4 fTransform;
+		//private Func.M4 fTransform;
 		private Program program;       // can be null
 		private Drawable drawable;     // can be null
 		private Object parent;         // can be null
 		private List<Object> objects;  // can be null
-		private List<Event> events;    // can be null
 		// directly contol simple variables 
 		private Map<Uniform, Func.P> ufP;
 
+		
 		// (hmmm...  objects list is not really needed as we keep objects
 		//  in byProgram map for drawing and only traverse object transformation
 		//  hierarchy through parent pointers)
 		Matrix4f transform = new Matrix4f();
 		long transform_time_ns = 0;
 
+		private List<Event> events;    // can be null
+		
 		void updateEvents(double t, long time_ns) {
 			if (events != null) {
 				for (Event e : events) {
@@ -43,6 +45,38 @@ public class ObjectManager {
 				}
 			}
 		}
+		
+		TODO
+		// some separation of concerns:
+		
+		// 1) controllers (script/physics) update for time t0
+		//    - all local model transforms
+		//    - other model rendering parameters
+		
+		// 2) render preparation step computes model-to-world transformations
+		//    and prepares direct buffers for instanced rendering calls
+		
+		// 3) rendering step draws scene at time t0
+		
+		// 4) running parallel with 3, steps 1 & 2 are started for t1
+		
+		// render preparation and rendering steps should be completely
+		// independent of complexities of step 1
+		// (currently some complexity is leaked here, like time-based transform and event updating)
+		
+		// some complications: how should we provide generic information
+		// about object positional/rotational velocity/acceleration needed by controllers?
+		// ok, so the problem is that object controller doesn't necessarily know full world
+		// transformation so it cannot provide world velocity..
+		
+		// since position is part of object's state, perhaps it is best to also store
+		// time derivatives of position there as well...
+		// should not be too difficult to calc dp/dt from previous frame
+		// (hard to say if calculating it for everything might cause perf issues) 
+		
+		// keep previous world transform
+		// world position and velocity are simply determined from diff to prev 
+		
 		Vector3f getPosition(long time_ns) {
 			Matrix4f tf = getTransform(time_ns);
 			return new Vector3f(tf.m30, tf.m31, tf.m32);
@@ -160,23 +194,60 @@ public class ObjectManager {
 	}
 
 	// simple draw initially, instanced later (needs program support!)
+	
+	// this step should prepare stuff to be rendered, not call opengl directly
+	// (create buffers that can be rendered directly)
+	
 	public void drawObjectsAt(View view, long time_ns) {
 		double t = time_ns/1000000000.0;
 		for (Map.Entry<Program,Map<Drawable, List<Object>>> e1 : byProgram.entrySet()) {
 			Program program = e1.getKey();
 			program.useView(view);
+			
 			for (Map.Entry<Drawable, List<Object>> e2 : e1.getValue().entrySet()) {
 				Drawable drawable = e2.getKey();
-				for (Object object : e2.getValue()) {
+				
+				int max = program.maxInstanced();
+				int remaining = e2.getValue().size();
+				
+				Matrix4f tmp_m = new Matrix4f();
+				// check if program supports instanced drawing
+				if (max > 1) {
+					Matrix4f[] model_to_world = new Matrix4f[max];
+
+					int count = 0;
 					
-					program.useModelTransform(object.getTransform(time_ns));
-					if (object.ufP != null) {
-						for (Map.Entry<Uniform, Func.P> e : object.ufP.entrySet()) {
-							program.bind(e.getKey(), e.getValue().p(t));
+					for (Object object : e2.getValue()) {
+						
+						model_to_world[count++] = object.getTransform(time_ns); // tmp_m; //
+						if (count == max || count == remaining) {
+							program.useModelTransforms(model_to_world, count);
+							drawable.drawInstanced(count);
+							remaining -= count;
+							count = 0;
 						}
+//						program.useModelTransform(object.getTransform(time_ns));
+//						if (object.ufP != null) {
+//							for (Map.Entry<Uniform, Func.P> e : object.ufP.entrySet()) {
+//								program.bind(e.getKey(), e.getValue().p(t));
+//							}
+//						}
+//						drawable.draw();
+						object.updateEvents(t, time_ns);
 					}
-					drawable.draw();
-					object.updateEvents(t, time_ns);
+					
+					
+				} else {
+					for (Object object : e2.getValue()) {
+						program.useModelTransform(object.getTransform(time_ns));
+						if (object.ufP != null) {
+							for (Map.Entry<Uniform, Func.P> e : object.ufP.entrySet()) {
+								program.bind(e.getKey(), e.getValue().p(t));
+							}
+						}
+						drawable.draw();
+						object.updateEvents(t, time_ns);
+					}
 				}
 			}
 			// program.getIndex(Uniform.)

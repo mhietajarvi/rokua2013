@@ -7,6 +7,7 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL31;
 import org.lwjgl.util.vector.Vector3f;
 
 
@@ -278,6 +279,14 @@ public class Cube implements Drawable {
 	public void draw() {
 		GL30.glBindVertexArray(vao);
 		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, triCount*3);
+		//GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, 1*3);
+	}
+
+	@Override
+	public void drawInstanced(int count) {
+		GL30.glBindVertexArray(vao);
+		GL31.glDrawArraysInstanced(GL11.GL_TRIANGLES, 0, triCount*3, count);
+		//GL31.glDrawArraysInstanced(GL11.GL_TRIANGLES, 0, 1*3, count);
 	}
 
 //	@Override

@@ -51,6 +51,7 @@ public class Program {
 		U_MODEL_TO_WORLD_M4,
 		U_MODEL_TO_VIEW_M4,
 		U_MODEL_TO_PROJECTED_M4,
+		U_WORLD_TO_PROJECTED_M4,
 		
 		U_EYE_WORLD_POS_3F,
 		
@@ -76,7 +77,12 @@ public class Program {
 	private int program;
 	private int vertexShader;
 	private int fragmentShader;
-	private FloatBuffer buf = BufferUtils.createFloatBuffer(4*4);
+	
+	public int maxInstanced() {
+		return 255;
+	}
+	
+	private FloatBuffer buf = BufferUtils.createFloatBuffer(maxInstanced()*4*4);
 	
 
 	public Program(String vertexShaderFile, String fragmentShaderFile) throws IOException {
@@ -159,7 +165,8 @@ public class Program {
 	View view;
 	Matrix4f model_to_view = new Matrix4f();
 	Matrix4f model_to_projected = new Matrix4f();
-
+	Matrix4f world_to_projected = new Matrix4f();
+	
 	public void useView(View view) {
 		
 		this.view = view;
@@ -169,18 +176,21 @@ public class Program {
         glUniform3f(getIndex(Uniform.U_POINT_LIGHT_1_3F), view.point_light_1.x, view.point_light_1.y, view.point_light_1.z);
         
         glUniform1i(getIndex(Uniform.U_ENV_CUBE), view.envCubeSampler);
+		setUniform(Uniform.U_EYE_WORLD_POS_3F, view.view_to_world.m30, view.view_to_world.m31, view.view_to_world.m32);
 	}
 	
 	public void bind(Uniform u, float value) {
         glUniform1f(getIndex(u), value);
 	}
 	
-	public void setUniform(Uniform u, Matrix4f data) {
+	public void setUniform(Uniform u, int count, Matrix4f... matrices) {
 		
 		int index = getIndex(u);
 		if (index != -1) {
 	    	buf.clear();
-	    	data.store(buf);
+	    	for (int i = 0; i < count; i++) {
+	    		matrices[i].store(buf);
+	    	}
 	    	buf.flip();
 	        glUniformMatrix4(index, false, buf);
 		}
@@ -193,19 +203,25 @@ public class Program {
 	        glUniform3f(index, v0, v1, v2);
 		}
 	}
+
+	public void useModelTransforms(Matrix4f[] model_to_world, int count) {
+
+		Matrix4f.mul(view.projection, view.world_to_view, world_to_projected);
+		
+		setUniform(Uniform.U_MODEL_TO_WORLD_M4, count, model_to_world);
+		setUniform(Uniform.U_WORLD_TO_PROJECTED_M4, 1, world_to_projected);
+	}
 	
 	public void useModelTransform(Matrix4f model_to_world) {
+		
+		glUseProgram(program);
 		
 		Matrix4f.mul(view.world_to_view, model_to_world, model_to_view);
 		Matrix4f.mul(view.projection, model_to_view, model_to_projected);
 		
-
-		glUseProgram(program);
-		
-		setUniform(Uniform.U_MODEL_TO_WORLD_M4, model_to_world);
-		setUniform(Uniform.U_MODEL_TO_VIEW_M4, model_to_view);
-		setUniform(Uniform.U_MODEL_TO_PROJECTED_M4, model_to_projected);
-		setUniform(Uniform.U_EYE_WORLD_POS_3F, view.view_to_world.m30, view.view_to_world.m31, view.view_to_world.m32);
+		setUniform(Uniform.U_MODEL_TO_WORLD_M4, 1, model_to_world);
+		setUniform(Uniform.U_MODEL_TO_VIEW_M4, 1, model_to_view);
+		setUniform(Uniform.U_MODEL_TO_PROJECTED_M4, 1, model_to_projected);
 	}
 	
 //	public void useWith(View view, Matrix4f model_to_world) {

@@ -122,24 +122,43 @@ public class Test {
 	static Random rnd = new Random(2434);
 	
 	Vector3f v = new Vector3f();
+	Vector3f zero = new Vector3f();
 	
-	public static void rnd(Vector3f v, float r) {
+	public static Vector3f rnd(Vector3f v, float r) {
 		v.x = (rnd.nextFloat() - 0.5f)*2*r;
 		v.y = (rnd.nextFloat() - 0.5f)*2*r;
 		v.z = (rnd.nextFloat() - 0.5f)*2*r;
+		return v;
+	}
+
+	public static Vector3f rnd(float r) {
+		return rnd(new Vector3f(),r);
 	}
 	
 	public static void main(String[] args) throws Exception {
 		new Test().run();
 	}
 
-	int N = 1000;
+	int N = 30000;
 	
 	Deque<Object> reserve = new ArrayDeque<>(N);
 	Deque<Object> fallingBlocks = new ArrayDeque<>(N);
 
-	final Func.M4 farAway = new Simple.Position(0, new Vector3f(10000, 0, 0));
+	// final Func.M4 farAway = new Simple.Position(0, new Vector3f(10000, 0, 0));
 
+	final Vector3f farAwayPos() {
+		
+		Vector3f p = rnd(50);
+		//Vector3f p = rnd(5);
+		p.y += 100; 
+		return p;
+	}
+	
+	final Func.M4 farAway() {
+		
+		return new Simple.Position(0, farAwayPos());
+	}
+	
 	int nextFb = 0;
 	double fbInterval = 0.01;
 
@@ -148,15 +167,16 @@ public class Test {
 	
 	Object fbTransition(final Object obj) {
 		final double t0 = (nextFb++)*fbInterval;
-		final double t1 = t0 + 2;
+		final double t1 = t0 + 20;
+		Interpolator ip = new SmoothVelocity(t0 - 0.5, t0 + 0.1);
+		obj.set(Uniform.U_COLOR_MULT_F, ip.interpolate(1, 20, 1, 0));
 		obj.add(new Event() {
 			//double t0 = (nextFb++)*fbInterval;
     		public boolean update(double t, long time_ns) {
     			if (t >= t0) {
-    				// start from random position
-					obj.set(new Simple.Position(t, new Vector3f(10 - rnd.nextFloat()*6, 5, -rnd.nextFloat()*6), new Vector3f(0, -30, 0), new Vector3f(0, 0, 0)));
-					Interpolator ip = new SmoothVelocity(t, t+0.7);
-					obj.set(Uniform.U_COLOR_MULT_F, ip.interpolate(1, 20, 1, 0));
+    				// start from current position
+    				Vector3f p = obj.getPosition(time_ns); //new Vector3f(10 - rnd.nextFloat()*6, 5, -rnd.nextFloat()*6);
+					obj.set(new Simple.Position(t, p, new Vector3f(0, -30, 0), new Vector3f(0, 0, 0)));
 					fallingBlocks.add(obj);
 					
 					obj.add(new Event() {
@@ -164,7 +184,7 @@ public class Test {
 						public boolean update(double t, long time_ns) {
 							if (t >= t1) {
 								// remove falling block
-								obj.set(farAway);
+								obj.set(farAway());
 								fallingBlocks.remove(obj);
 								fbTransition(obj);
 								return true;
@@ -199,7 +219,8 @@ public class Test {
 	
 	void createChar(final double t, long time_ns, char ch) {
 		
-		Interpolator ip1 = new SmoothVelocity(t, t+1);
+		Interpolator ip1 = new SmoothVelocity(t    , t + 1);
+		final Interpolator ip2 = new SmoothVelocity(t + 8, t + 20);
 		Object parent = om.new Object(new Simple.Position(t, new Vector3f(-4,-30,0), new Vector3f(-10,0,0)));
 		Composer comp = new Composer(parent, font.getGlyph(ch));
 		int n = 0;
@@ -210,18 +231,32 @@ public class Test {
 				@Override
 				public boolean update(double _t, long time_ns) {
 
-					if (_t > (t + 8)) {
-						Vector3f pos = obj.getPosition(time_ns);
+					// move back to cloud
+					if (_t > ip2.t0()) {
+						
+						Vector3f p0 = obj.getPosition(time_ns);
 						obj.detach();
-						Vector3f v = new Vector3f();
-						Vector3f a = new Vector3f(0, -20, 0);
-						rnd(v, 10);
-						v.x -= 20;
-						v.z -= 200;
-						obj.set(new Simple.Position(_t, pos, v, a));
+						rnd(v0, 1);
+						v0.x -= 40;
+				    	VectorPV p = new VectorPV(ip2, p0, v0, farAwayPos(), zero);
+				    	obj.set(new PosRot(p, null));
 						fbTransition(obj);
 						return true;
 					}
+					
+					
+//					if (_t > (t + 8)) {
+//						Vector3f pos = obj.getPosition(time_ns);
+//						obj.detach();
+//						Vector3f v = new Vector3f();
+//						Vector3f a = new Vector3f(0, -20, 0);
+//						rnd(v, 10);
+//						v.x -= 20;
+//						v.z -= 200;
+//						obj.set(new Simple.Position(_t, pos, v, a));
+//						fbTransition(obj);
+//						return true;
+//					}
 					return false;
 				}
 			});
@@ -233,9 +268,9 @@ public class Test {
 	
 	public void run() throws Exception {
 		
-		//Display.setDisplayMode(new DisplayMode(800, 400));
-		Display.setVSyncEnabled(true);
-		Display.setFullscreen(true);
+		Display.setDisplayMode(new DisplayMode(800, 400));
+		Display.setVSyncEnabled(false);
+		//Display.setFullscreen(true);
 		Display.setTitle("Rokua2013");
 		Display.create(new PixelFormat(), new ContextAttribs(3, 2).withProfileCore(true).withForwardCompatible(true));
 		Display.setResizable(true);
@@ -303,10 +338,9 @@ public class Test {
 
         glEnable(GL_BLEND);
 		glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-        glEnable(GL_DEPTH_TEST);
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_FRONT);
-        //glDisable(GL_CULL_FACE);
+        //glEnable(GL_CULL_FACE);
+        //glCullFace(GL_FRONT);
+        glDisable(GL_CULL_FACE);
 
 
         // new parent object has independent animation (e.g. scroller)
@@ -328,7 +362,7 @@ public class Test {
         // animate current position to target using splines? or something else?
         
         
-        // cubes appear, tumble and fall under gravity, disappear
+        // cubes appear, tumble and fall under gravity, disappearw
         // text steals these cubes
         // text scrolls and after a while text cubes disappear
         
@@ -343,7 +377,7 @@ public class Test {
 		// falling blocks are generated at fixed rate, so we
 		
         for (int i = 0; i < N; i++) {
-        	final Object obj = fbTransition(om.new Object(glass, cube, farAway));
+        	final Object obj = fbTransition(om.new Object(glass, cube, farAway()));
         	//reserve.add(obj);
         	
         	// objects in reserve will become fallingblocks after a while

@@ -23,7 +23,7 @@ public class PointCloudFont {
     
     	PointCloudFont f = new PointCloudFont("Monaco", 25, 1, 1, 1, 1);
     	
-    	Log.d(""+f.getGlyph('Ã…'));
+    	Log.d(""+f.getGlyph('Å'));
     	
     	
 	}
