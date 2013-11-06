@@ -17,7 +17,7 @@ public class ObjectManager {
 		// can specify various parameters as time-based functions
 		// attach directly to shader uniforms?
 		
-		//private Func.M4 fTransform;
+		private Func.M4 fTransform;
 		private Program program;       // can be null
 		private Drawable drawable;     // can be null
 		private Object parent;         // can be null
@@ -46,7 +46,7 @@ public class ObjectManager {
 			}
 		}
 		
-		TODO
+		//TODO
 		// some separation of concerns:
 		
 		// 1) controllers (script/physics) update for time t0

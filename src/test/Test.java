@@ -212,7 +212,7 @@ public class Test {
     
 	//Interpolator ip = new SmoothVelocity(0, 10);
 
-	Object someObj = om.new Object(null);
+	Object someObj = om.new Obj(null);
 
 	PointCloudFont font = new PointCloudFont("Monaco", 20, 1.2f, 1.2f, 1.2f, 1);
 
@@ -221,7 +221,7 @@ public class Test {
 		
 		Interpolator ip1 = new SmoothVelocity(t    , t + 1);
 		final Interpolator ip2 = new SmoothVelocity(t + 8, t + 20);
-		Object parent = om.new Object(new Simple.Position(t, new Vector3f(-4,-30,0), new Vector3f(-10,0,0)));
+		Object parent = om.new Obj(new Simple.Position(t, new Vector3f(-4,-30,0), new Vector3f(-10,0,0)));
 		Composer comp = new Composer(parent, font.getGlyph(ch));
 		int n = 0;
 		while (!fallingBlocks.isEmpty() && comp.hasRoom()) {
@@ -377,7 +377,7 @@ public class Test {
 		// falling blocks are generated at fixed rate, so we
 		
         for (int i = 0; i < N; i++) {
-        	final Object obj = fbTransition(om.new Object(glass, cube, farAway()));
+        	final Object obj = fbTransition(om.new Obj(glass, cube, farAway()));
         	//reserve.add(obj);
         	
         	// objects in reserve will become fallingblocks after a while

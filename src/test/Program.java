@@ -170,7 +170,11 @@ public class Program {
 	public void useView(View view) {
 		
 		this.view = view;
+		Matrix4f.mul(view.projection, view.world_to_view, world_to_projected);
+		
 		glUseProgram(program);
+
+		setUniform(Uniform.U_WORLD_TO_PROJECTED_M4, 1, world_to_projected);
 		
         // map current lights to uniforms provided by shader program
         glUniform3f(getIndex(Uniform.U_POINT_LIGHT_1_3F), view.point_light_1.x, view.point_light_1.y, view.point_light_1.z);
@@ -181,6 +185,15 @@ public class Program {
 	
 	public void bind(Uniform u, float value) {
         glUniform1f(getIndex(u), value);
+	}
+	
+	
+	public void setUniform(Uniform u, FloatBuffer buf) {
+		
+		int index = getIndex(u);
+		if (index != -1) {
+	        glUniformMatrix4(index, false, buf);
+		}
 	}
 	
 	public void setUniform(Uniform u, int count, Matrix4f... matrices) {
@@ -206,8 +219,6 @@ public class Program {
 
 	public void useModelTransforms(Matrix4f[] model_to_world, int count) {
 
-		Matrix4f.mul(view.projection, view.world_to_view, world_to_projected);
-		
 		setUniform(Uniform.U_MODEL_TO_WORLD_M4, count, model_to_world);
 		setUniform(Uniform.U_WORLD_TO_PROJECTED_M4, 1, world_to_projected);
 	}

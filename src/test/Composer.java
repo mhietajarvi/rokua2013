@@ -11,7 +11,7 @@ import test.Program.Uniform;
 
 public class Composer {
 
-	private final test.ObjectManager.Object parent;
+	private final test.ObjectManager.Obj parent;
 	private final Deque<Vector3f> available; //attachPoints;
 	//private final boolean[] used;
 	
@@ -20,7 +20,7 @@ public class Composer {
     static Vector3f p1 = new Vector3f();
     static Vector3f v1 = new Vector3f();
 	
-	public Composer(test.ObjectManager.Object parent, List<Vector3f> attachPoints) {
+	public Composer(test.Obj.Object parent, List<Vector3f> attachPoints) {
 		this.parent = parent;
 		this.available = new ArrayDeque<>(attachPoints);
 		//used = new boolean[attachPoints.size()];
@@ -37,7 +37,7 @@ public class Composer {
 	}
 	Matrix4f tmp = new Matrix4f();
 	
-	public void attach(final Interpolator ip, long time_ns, final test.ObjectManager.Object object) {
+	public void attach(final Interpolator ip, long time_ns, final test.Obj.Object object) {
 
 		// get current p/v of object in parent's space
 		// object.worldPos
