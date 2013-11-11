@@ -8,7 +8,10 @@ import java.awt.color.*;
 import java.awt.image.*;
 import java.io.*;
 import java.nio.*;
+import java.nio.file.Paths;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.imageio.*;
 
@@ -32,8 +35,8 @@ public class View {
 			GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
 			GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
 			GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z };
-	String[] cube_map_file = {
-			"right.jpg", "left.jpg", "top.jpg", "bottom.jpg", "back.jpg", "front.jpg" };
+	String[] cube_map_patt = {
+			"right.*", "left.*", "top.*", "bottom.*", "back.*", "front.*" };
 	// temp fix to flip the images i am using...
 	boolean[] cube_map_fx = { true,true,false,false,true,true };
 	boolean[] cube_map_fy = { false,false,true,true,false,false };
@@ -134,7 +137,11 @@ public class View {
             new ImageGen(side, side).img1((i+1)*5000, (i+1)*50).buffer());
 */			
 			
-			InputStream is = new FileInputStream(new File(directory, cube_map_file[i]));
+			File file = Util.find(directory, cube_map_patt[i]);
+			if (file == null) {
+				throw new IllegalArgumentException("Could not find match for "+cube_map_patt[i]+" in "+directory);
+			}
+			InputStream is = new FileInputStream(file); //new File(directory, cube_map_file[i]));
 			
 //			ImageIOImageData imageData = new ImageIOImageData();
 //			BufferedImage bi = ImageIO.read(new BufferedInputStream(is));

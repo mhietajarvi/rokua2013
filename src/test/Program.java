@@ -7,6 +7,7 @@ import static org.lwjgl.opengl.GL30.*;
 import static org.lwjgl.opengl.GL31.*;
 import static org.lwjgl.opengl.GL32.*;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.nio.charset.Charset;
@@ -40,11 +41,6 @@ import org.lwjgl.util.vector.Matrix4f;
  * 
  */
 public class Program {
-
-	static String read(String file) throws IOException {
-		return new String(Files.readAllBytes(Paths.get(file)),
-				Charset.forName("UTF-8"));
-	}
 
 	public static enum Uniform {
 		// standard matrices that should be used by any sane vertex shader
@@ -87,19 +83,24 @@ public class Program {
 	private FloatBuffer buf = BufferUtils.createFloatBuffer(maxInstanced()*4*4);
 	
 
-	public Program(String vertexShaderFile, String geometryShaderFile, String fragmentShaderFile) throws IOException {
+	public Program(String dir) throws IOException {
+
+		this(Util.find(dir, "vertex.*"), Util.find(dir, "geometry.*"), Util.find(dir, "fragment.*"));
+	}
+	
+	public Program(File vertexShaderFile, File geometryShaderFile, File fragmentShaderFile) throws IOException {
 		
 		Arrays.fill(uIndices, -1);
 		//Arrays.fill(aIndices, -1);
 		
 		Log.d("Loading vertex shader: %s", vertexShaderFile);
-		vertexShader = loadShader(GL_VERTEX_SHADER, read(vertexShaderFile));
+		vertexShader = loadShader(GL_VERTEX_SHADER, Util.read(vertexShaderFile));
 		if (geometryShaderFile != null) {
 			Log.d("Loading geometry shader: %s", geometryShaderFile);
-			geometryShader = loadShader(GL_GEOMETRY_SHADER, read(geometryShaderFile));
+			geometryShader = loadShader(GL_GEOMETRY_SHADER, Util.read(geometryShaderFile));
 		}
 		Log.d("Loading fragment shader: %s", fragmentShaderFile);
-		fragmentShader = loadShader(GL_FRAGMENT_SHADER, read(fragmentShaderFile));
+		fragmentShader = loadShader(GL_FRAGMENT_SHADER, Util.read(fragmentShaderFile));
 		program = glCreateProgram();
 		glAttachShader(program, vertexShader);
 		if (geometryShaderFile != null) {

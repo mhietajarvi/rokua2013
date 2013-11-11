@@ -1,27 +1,15 @@
 package test;
 
-import static org.lwjgl.opengl.GL11.GL_BLEND;
-import static org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT;
-import static org.lwjgl.opengl.GL11.GL_CULL_FACE;
-import static org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT;
-import static org.lwjgl.opengl.GL11.GL_DEPTH_TEST;
-import static org.lwjgl.opengl.GL11.GL_FILL;
-import static org.lwjgl.opengl.GL11.GL_FRONT_AND_BACK;
-import static org.lwjgl.opengl.GL11.GL_NO_ERROR;
-import static org.lwjgl.opengl.GL11.GL_VERSION;
-import static org.lwjgl.opengl.GL11.glBindTexture;
-import static org.lwjgl.opengl.GL11.glClear;
-import static org.lwjgl.opengl.GL11.glClearColor;
-import static org.lwjgl.opengl.GL11.glDisable;
-import static org.lwjgl.opengl.GL11.glEnable;
-import static org.lwjgl.opengl.GL11.glGetError;
-import static org.lwjgl.opengl.GL11.glGetString;
-import static org.lwjgl.opengl.GL11.glPolygonMode;
-import static org.lwjgl.opengl.GL11.glViewport;
-import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
-import static org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP;
-import static org.lwjgl.opengl.GL13.glActiveTexture;
-import static org.lwjgl.opengl.GL32.GL_TEXTURE_CUBE_MAP_SEAMLESS;
+import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL12.*;
+import static org.lwjgl.opengl.GL13.*;
+import static org.lwjgl.opengl.GL14.*;
+import static org.lwjgl.opengl.GL15.*;
+import static org.lwjgl.opengl.GL20.*;
+import static org.lwjgl.opengl.GL21.*;
+import static org.lwjgl.opengl.GL30.*;
+import static org.lwjgl.opengl.GL31.*;
+import static org.lwjgl.opengl.GL32.*;
 
 import java.nio.FloatBuffer;
 import java.util.ArrayDeque;
@@ -154,7 +142,7 @@ public class Test2 {
 		new Test2().run();
 	}
 
-	int N = 100;
+	int N = 10;
 	
 	Deque<Obj> reserve = new ArrayDeque<>(N);
 	Deque<Obj> fallingBlocks = new ArrayDeque<>(N);
@@ -294,20 +282,23 @@ public class Test2 {
 //		glBufferData(GL_ARRAY_BUFFER, vertexData, GL_STATIC_DRAW);
 		
 		
+		// 0 1  2  3   4    5    6
+		// 1 4 16 64 256 1024 4096
 		
 		// glTexI
 		
 		//RokuaRenderer r = new RokuaRenderer();
 		exitOnGLError("A");
         //Program glass = new Program("assets/shaders/glass/vertex.glsl", "assets/shaders/glass/geometry.glsl", "assets/shaders/glass/fragment.glsl");
-        Program glass = new Program("assets/shaders/glass2/vertex.glsl", null, "assets/shaders/glass2/fragment.glsl");
+        Program glass = new Program("assets/shaders/glass2");
+        Program noise = new Program("assets/shaders/noise");
         //Program glass = new Program("assets/shaders/glass/vertex.glsl", null, "assets/shaders/glass/fragment.glsl");
-        Program background = new Program("assets/shaders/background/vertex.glsl", null, "assets/shaders/background/fragment.glsl");
+        Program background = new Program("assets/shaders/background");
 		exitOnGLError("B");
         
         // GLU.gluLookAt(eyex, eyey, eyez, centerx, cente§ry, centerz, upx, upy, upz);
         Cube cube = new Cube(0.5f);
-        Sphere sphere = new Sphere(1, 5);
+        Sphere sphere = new Sphere(1, 6);
         
         // TODO: specify background rect in projected space to 
         Rect bgRect = new Rect(2, 1, -0.5f);
@@ -320,6 +311,7 @@ public class Test2 {
 		//view.translateView(40, 30, -50);
 		
 		// ugly as hell
+		//view.loadCubeTexture("assets/images/env1");
 		view.loadCubeTexture("assets/images/env1");
 		
 		
@@ -383,7 +375,7 @@ public class Test2 {
 		// falling blocks are generated at fixed rate, so we
 		
         for (int i = 0; i < N; i++) {
-        	Obj obj = om.new Obj(glass, sphere); //fbTransition(om.new Obj(glass, cube, farAway()));
+        	Obj obj = om.new Obj(noise, sphere); //fbTransition(om.new Obj(glass, cube, farAway()));
         	reserve.add(obj);
         	// objects in reserve will become fallingblocks after a while
         }

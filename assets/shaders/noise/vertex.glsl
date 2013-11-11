@@ -1,16 +1,5 @@
 #version 150 core
 
-// Input vertex data, different for all executions of this shader.
-// layout(location = 0) in vec3 vertexPosition_modelspace;
-//void main(){
-//    gl_Position.xyz = vertexPosition_modelspace;
-//    gl_Position.w = 1.0;
-//}
-
-
-// some own color + reflected + refracted
-// need 
-
 
 uniform mat4 U_MODEL_TO_WORLD_M4[250];
 uniform mat4 U_WORLD_TO_PROJECTED_M4;
@@ -26,18 +15,11 @@ in vec4 COLOR_4F;            // Per-vertex color information we will pass in.
 //out vec4 v_color;
 
 out Fragment {
+	vec3 model_pos;
 	vec3 world_pos;
 	vec3 world_nrm;
 	flat vec4 color;
 };
-
-
-//out vec3 v_normal;
-//out vec3 v_world_normal;
-//out mat4 w_to_p;
-//out mat4 m_to_w;
-//out vec3 mpos;
-//out float v_color_mult;
 
 mat3 rotx(float a) {
 	float s = sin(a);
@@ -61,19 +43,6 @@ mat3 rotz(float a) {
 				 0, 0, 1);
 }
 
-/*
-c  s   x    c*x + s*y
--s c   y    c*y - s*x
-             z
-
-c  s   x    c*x - s*y
--s c   y    c*y + s*x
-             z
-
- 2*s*y
--2*s*x
-   0
-*/
 
 float eps = 0.01;
 mat3 rp_x_e = rotx(eps);
@@ -88,8 +57,6 @@ vec3 angles(vec3 v) {
 	return vec3(atan(v.x, sqrt(v.z*v.z + v.y*v.y)),
 				atan(v.y, sqrt(v.z*v.z + v.x*v.x)),
 				atan(v.z, sqrt(v.x*v.x + v.y*v.y)));
-
-	//return vec2(atan(v.z, sqrt(v.x*v.x + v.y*v.y)),atan(v.y, v.x));
 }
 
 
@@ -145,8 +112,8 @@ void main() {
 	s2 = s2 * disp(s2);
 	vec3 model_nrm = normalize(mult*cross(p2 - s2, p1 - s1));
 	
-	
-	vec4 wp = U_MODEL_TO_WORLD_M4[gl_InstanceID] * vec4(POSITION_3F * (disp(POSITION_3F)), 1);
+	model_pos = POSITION_3F * disp(POSITION_3F);
+	vec4 wp = U_MODEL_TO_WORLD_M4[gl_InstanceID] * vec4(model_pos, 1);
 	world_pos = vec3(wp);
 	world_nrm = mat3x3(U_MODEL_TO_WORLD_M4[gl_InstanceID]) * model_nrm;
 	color = COLOR_4F;

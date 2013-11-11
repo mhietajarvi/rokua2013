@@ -1,6 +1,12 @@
 package test;
 
+import java.io.File;
+import java.io.FilenameFilter;
+import java.io.IOException;
 import java.nio.FloatBuffer;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -15,6 +21,28 @@ public class Util {
 			r[i] = new Vector3f(c[3*i], c[3*i+1], c[3*i+2]);
 		}
 		return r;
+	}
+
+	static String read(String file) throws IOException {
+		return new String(Files.readAllBytes(Paths.get(file)),
+				Charset.forName("UTF-8"));
+	}
+
+	static String read(File file) throws IOException {
+		return new String(Files.readAllBytes(Paths.get(file.getAbsolutePath())),
+				Charset.forName("UTF-8"));
+	}
+	
+	
+	static File find(String dir, final String filePattern) {
+	
+		File[] files = new File(dir).listFiles(new FilenameFilter() {
+			@Override
+			public boolean accept(File dir, String name) {
+				return name.matches(filePattern);
+			}
+		});
+		return files.length > 0 ? files[0] : null;
 	}
 	
 //	static Vector3f normalize(Vector3f v) {
