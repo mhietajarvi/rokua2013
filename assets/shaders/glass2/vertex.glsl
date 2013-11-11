@@ -22,8 +22,15 @@ in vec3 POSITION_3F;         // Per-vertex position information we will pass in.
 in vec3 NORMAL_3F;           // Per-vertex normal information we will pass in.
 in vec4 COLOR_4F;            // Per-vertex color information we will pass in.
 
-out vec3 v_world_pos;
-out vec4 v_color;
+//out vec3 v_world_pos;
+//out vec4 v_color;
+
+out Fragment {
+	vec3 world_pos;
+	vec3 world_nrm;
+	flat vec4 color;
+};
+
 
 //out vec3 v_normal;
 //out vec3 v_world_normal;
@@ -32,21 +39,36 @@ out vec4 v_color;
 //out vec3 mpos;
 //out float v_color_mult;
 
-vec2 latlon(vec3 v) {
+vec3 angles(vec3 v) {
 
-	return vec2(atan(v.z/sqrt(v.x*v.x + v.y*v.y)),atan(v.y/v.x));
+	return vec3(atan(v.x, sqrt(v.z*v.z + v.y*v.y)),
+				atan(v.y, sqrt(v.z*v.z + v.x*v.x)),
+				atan(v.z, sqrt(v.x*v.x + v.y*v.y)));
+
+	//return vec2(atan(v.z, sqrt(v.x*v.x + v.y*v.y)),atan(v.y, v.x));
+}
+
+//float es = sin(0.01);
+//float ec = cos(0.01);
+
+
+
+float disp(vec3 v) {
+	return 1 + 0.2*cos(U_TIME_F + 2*v.x) + 0.2*sin(U_TIME_F + 3*v.y) + 0.2*sin(U_TIME_F + 4*v.z);
 }
 
 // The entry point for our vertex shader.
 void main() {
 
-	vec2 l = latlon(POSITION_3F);
-
-	vec4 world_pos = U_MODEL_TO_WORLD_M4[gl_InstanceID] * vec4(POSITION_3F * (1 + 0.1*cos(U_TIME_F + l.x) + 0.1*sin(U_TIME_F + l.y)), 1);
+	//vec3 a = angles(POSITION_3F);
+	//float disp = 1 + 0.2*cos(U_TIME_F + 7*a.x + 3*a.y + 5*a.z); // + 0.0*sin(U_TIME_F + l.y);
+	//float disp = 1 + 0.2*cos(U_TIME_F + 2*POSITION_3F.x) + 0.2*sin(U_TIME_F + 3*POSITION_3F.y) + 0.2*sin(U_TIME_F + 4*POSITION_3F.z); // + 0.0*sin(U_TIME_F + l.y);
 	
-	v_world_pos = vec3(world_pos); //U_MODEL_TO_WORLD_M4[gl_InstanceID] * pos);
-	v_color = COLOR_4F;
-	gl_Position = U_WORLD_TO_PROJECTED_M4 * world_pos;
+	vec4 wp = U_MODEL_TO_WORLD_M4[gl_InstanceID] * vec4(POSITION_3F * (disp(POSITION_3F)), 1);
+	world_pos = vec3(wp);
+	world_nrm = mat3x3(U_MODEL_TO_WORLD_M4[gl_InstanceID]) * NORMAL_3F; // + vec3(0.2*cos(U_TIME_F + 3*POSITION_3F.y),0,0)) ;
+	color = COLOR_4F;
+	gl_Position = U_WORLD_TO_PROJECTED_M4 * wp;
 	
 //	v_color_mult = U_COLOR_MULT_F[gl_InstanceID];
 	// Transform the normal's orientation into eye space. (this works if there is no non-uniform scaling)

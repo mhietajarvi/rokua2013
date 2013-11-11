@@ -57,7 +57,7 @@ public class Util {
 		return buf;
 	}
 
-	// animation tri coordinates
+	// subdivides triangles as follows:
 	//       *0
 	//     
 	//   *1      *2
@@ -98,8 +98,6 @@ public class Util {
 
 	static Vector3f mid(Vector3f a, Vector3f b) {
 		return new Vector3f((a.x + b.x)*0.5f, (a.y + b.y)*0.5f, (a.z + b.z)*0.5f);
-		//v.interpolate(b, 0.5f);
-		//return v;
 	}
 	
 }

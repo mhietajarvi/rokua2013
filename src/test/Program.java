@@ -56,6 +56,7 @@ public class Program {
 		U_EYE_WORLD_POS_3F,
 		
 		U_COLOR_MULT_F,
+		U_TIME_F,
 
 		// I don't yet know how to elegantly handle different light types
 		// supported by shaders...
@@ -76,26 +77,34 @@ public class Program {
 
 	private int program;
 	private int vertexShader;
+	private int geometryShader;
 	private int fragmentShader;
 	
 	public int maxInstanced() {
-		return 255;
+		return 250;
 	}
 	
 	private FloatBuffer buf = BufferUtils.createFloatBuffer(maxInstanced()*4*4);
 	
 
-	public Program(String vertexShaderFile, String fragmentShaderFile) throws IOException {
+	public Program(String vertexShaderFile, String geometryShaderFile, String fragmentShaderFile) throws IOException {
 		
 		Arrays.fill(uIndices, -1);
 		//Arrays.fill(aIndices, -1);
 		
 		Log.d("Loading vertex shader: %s", vertexShaderFile);
 		vertexShader = loadShader(GL_VERTEX_SHADER, read(vertexShaderFile));
+		if (geometryShaderFile != null) {
+			Log.d("Loading geometry shader: %s", geometryShaderFile);
+			geometryShader = loadShader(GL_GEOMETRY_SHADER, read(geometryShaderFile));
+		}
 		Log.d("Loading fragment shader: %s", fragmentShaderFile);
 		fragmentShader = loadShader(GL_FRAGMENT_SHADER, read(fragmentShaderFile));
 		program = glCreateProgram();
 		glAttachShader(program, vertexShader);
+		if (geometryShaderFile != null) {
+			glAttachShader(program, geometryShader);
+		}
 		glAttachShader(program, fragmentShader);
 		
 		for (Attribute a : Attribute.values()) {
@@ -167,7 +176,7 @@ public class Program {
 	Matrix4f model_to_projected = new Matrix4f();
 	Matrix4f world_to_projected = new Matrix4f();
 	
-	public void useView(View view) {
+	public void useGlobals(View view, double time) {
 		
 		this.view = view;
 		Matrix4f.mul(view.projection, view.world_to_view, world_to_projected);
@@ -181,6 +190,8 @@ public class Program {
         
         glUniform1i(getIndex(Uniform.U_ENV_CUBE), view.envCubeSampler);
 		setUniform(Uniform.U_EYE_WORLD_POS_3F, view.view_to_world.m30, view.view_to_world.m31, view.view_to_world.m32);
+		
+		setUniform(Uniform.U_TIME_F, (float)time);
 	}
 	
 	public void bind(Uniform u, float value) {
@@ -216,6 +227,15 @@ public class Program {
 	        glUniform3f(index, v0, v1, v2);
 		}
 	}
+	
+	public void setUniform(Uniform u, float f) {
+		
+		int index = getIndex(u);
+		if (index != -1) {
+	        glUniform1f(index, f);
+		}
+	}
+	
 
 	public void useModelTransforms(Matrix4f[] model_to_world, int count) {
 

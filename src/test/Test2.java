@@ -1,19 +1,35 @@
 package test;
 
-import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL12.*;
-import static org.lwjgl.opengl.GL13.*;
-import static org.lwjgl.opengl.GL14.*;
-import static org.lwjgl.opengl.GL15.*;
-import static org.lwjgl.opengl.GL20.*;
-import static org.lwjgl.opengl.GL21.*;
-import static org.lwjgl.opengl.GL30.*;
-import static org.lwjgl.opengl.GL31.*;
-import static org.lwjgl.opengl.GL32.*;
+import static org.lwjgl.opengl.GL11.GL_BLEND;
+import static org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT;
+import static org.lwjgl.opengl.GL11.GL_CULL_FACE;
+import static org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT;
+import static org.lwjgl.opengl.GL11.GL_DEPTH_TEST;
+import static org.lwjgl.opengl.GL11.GL_FILL;
+import static org.lwjgl.opengl.GL11.GL_FRONT_AND_BACK;
+import static org.lwjgl.opengl.GL11.GL_NO_ERROR;
+import static org.lwjgl.opengl.GL11.GL_VERSION;
+import static org.lwjgl.opengl.GL11.glBindTexture;
+import static org.lwjgl.opengl.GL11.glClear;
+import static org.lwjgl.opengl.GL11.glClearColor;
+import static org.lwjgl.opengl.GL11.glDisable;
+import static org.lwjgl.opengl.GL11.glEnable;
+import static org.lwjgl.opengl.GL11.glGetError;
+import static org.lwjgl.opengl.GL11.glGetString;
+import static org.lwjgl.opengl.GL11.glPolygonMode;
+import static org.lwjgl.opengl.GL11.glViewport;
+import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
+import static org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP;
+import static org.lwjgl.opengl.GL13.glActiveTexture;
+import static org.lwjgl.opengl.GL32.GL_TEXTURE_CUBE_MAP_SEAMLESS;
 
-import java.io.*;
 import java.nio.FloatBuffer;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.List;
+import java.util.Random;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.input.Keyboard;
@@ -23,11 +39,10 @@ import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.PixelFormat;
 import org.lwjgl.util.glu.GLU;
-import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 
-import test.ObjectManager.Event;
-import test.ObjectManager.Object;
+import test.ObjManager2.Buffers;
+import test.ObjManager2.Obj;
 import test.Program.Uniform;
 
 
@@ -66,9 +81,9 @@ import test.Program.Uniform;
  * 
  */
 
-public class Test {
+public class Test2 {
 	
-	Test() throws Exception {
+	Test2() throws Exception {
 		
 	}
 
@@ -136,13 +151,13 @@ public class Test {
 	}
 	
 	public static void main(String[] args) throws Exception {
-		new Test().run();
+		new Test2().run();
 	}
 
-	int N = 30000;
+	int N = 100;
 	
-	Deque<Object> reserve = new ArrayDeque<>(N);
-	Deque<Object> fallingBlocks = new ArrayDeque<>(N);
+	Deque<Obj> reserve = new ArrayDeque<>(N);
+	Deque<Obj> fallingBlocks = new ArrayDeque<>(N);
 
 	// final Func.M4 farAway = new Simple.Position(0, new Vector3f(10000, 0, 0));
 
@@ -164,7 +179,8 @@ public class Test {
 
 	double nextCharMinTime = 0;
 	double charInterval = 1.3;
-	
+
+/*	
 	Object fbTransition(final Object obj) {
 		final double t0 = (nextFb++)*fbInterval;
 		final double t1 = t0 + 20;
@@ -202,74 +218,61 @@ public class Test {
 		
     	return obj;
     }
+*/
 	
     Vector3f p0 = new Vector3f();
     Vector3f v0 = new Vector3f();
     Vector3f p1 = new Vector3f();
     Vector3f v1 = new Vector3f();
 
-    ObjectManager om = new ObjectManager();
+    ObjManager2 om = new ObjManager2();
     
 	//Interpolator ip = new SmoothVelocity(0, 10);
 
-	Object someObj = om.new Obj(null);
+	//Obj someObj = om.new Obj(null);
 
 	PointCloudFont font = new PointCloudFont("Monaco", 20, 1.2f, 1.2f, 1.2f, 1);
-
 	
-	void createChar(final double t, long time_ns, char ch) {
+	Binder.Mover pull = new Binder.Mover() {
 		
-		Interpolator ip1 = new SmoothVelocity(t    , t + 1);
-		final Interpolator ip2 = new SmoothVelocity(t + 8, t + 20);
-		Object parent = om.new Obj(new Simple.Position(t, new Vector3f(-4,-30,0), new Vector3f(-10,0,0)));
-		Binder comp = new Binder(parent, font.getGlyph(ch));
-		int n = 0;
-		while (!fallingBlocks.isEmpty() && comp.hasRoom()) {
-			final Object obj = fallingBlocks.remove();
-			obj.clearEvents();
-			obj.add(new Event() {
-				@Override
-				public boolean update(double _t, long time_ns) {
+		Vector3f r = new Vector3f();
+		float mult = 20.0f;
+		@Override
+		public void move(Vector3f p, Vector3f v, Vector3f target, float dt, Vector3f result) {
 
-					// move back to cloud
-					if (_t > ip2.t0()) {
-						
-						Vector3f p0 = obj.getPosition(time_ns);
-						obj.detach();
-						rnd(v0, 1);
-						v0.x -= 40;
-				    	VectorPV p = new VectorPV(ip2, p0, v0, farAwayPos(), zero);
-				    	obj.set(new PosRot(p, null));
-						fbTransition(obj);
-						return true;
-					}
-					
-					
-//					if (_t > (t + 8)) {
-//						Vector3f pos = obj.getPosition(time_ns);
-//						obj.detach();
-//						Vector3f v = new Vector3f();
-//						Vector3f a = new Vector3f(0, -20, 0);
-//						rnd(v, 10);
-//						v.x -= 20;
-//						v.z -= 200;
-//						obj.set(new Simple.Position(_t, pos, v, a));
-//						fbTransition(obj);
-//						return true;
-//					}
-					return false;
-				}
-			});
-			comp.attach(ip1, time_ns, obj);
-			n++;
+			Vector3f.sub(target, p, r);
+
+			//r.scale(0.05f);
+			
+			float r2 = (float)Math.sqrt(r.length());
+			r2 = Math.max(r2, 0.1f);
+			v.scale(0.97f);
+			r.scale(dt*mult/r2); // would need to divide by sqrt(r2) to make ~ actual gravitational pull
+			Vector3f.add(v, r, r);
+			r.scale(dt);
+			
+			Vector3f.add(p, r, result);
 		}
-		//Log.d("attached and removed "+n+" objects, "+fallingBlocks.size()+" remaining");
+	};
+
+    List<Controller> controllers = new ArrayList<>();
+	
+	// this creates new parent object for the char
+	// and binds subobjects to it
+	
+	Binder createChar(char ch, Deque<Obj> source) {
+		
+		Binder binder = new Binder(om.new Obj(), font.getGlyph(ch), pull);
+		while (!source.isEmpty() && !binder.isFull()) {
+			binder.bind(source.remove());
+		}
+		return binder;
 	}
 	
 	public void run() throws Exception {
 		
 		Display.setDisplayMode(new DisplayMode(800, 400));
-		Display.setVSyncEnabled(false);
+		Display.setVSyncEnabled(true);
 		//Display.setFullscreen(true);
 		Display.setTitle("Rokua2013");
 		Display.create(new PixelFormat(), new ContextAttribs(3, 2).withProfileCore(true).withForwardCompatible(true));
@@ -296,12 +299,15 @@ public class Test {
 		
 		//RokuaRenderer r = new RokuaRenderer();
 		exitOnGLError("A");
-        Program glass = new Program("assets/shaders/glass/vertex.glsl", "assets/shaders/glass/fragment.glsl");
-        Program background = new Program("assets/shaders/background/vertex.glsl", "assets/shaders/background/fragment.glsl");
+        //Program glass = new Program("assets/shaders/glass/vertex.glsl", "assets/shaders/glass/geometry.glsl", "assets/shaders/glass/fragment.glsl");
+        Program glass = new Program("assets/shaders/glass2/vertex.glsl", null, "assets/shaders/glass2/fragment.glsl");
+        //Program glass = new Program("assets/shaders/glass/vertex.glsl", null, "assets/shaders/glass/fragment.glsl");
+        Program background = new Program("assets/shaders/background/vertex.glsl", null, "assets/shaders/background/fragment.glsl");
 		exitOnGLError("B");
         
         // GLU.gluLookAt(eyex, eyey, eyez, centerx, cente§ry, centerz, upx, upy, upz);
         Cube cube = new Cube(0.5f);
+        Sphere sphere = new Sphere(1, 4);
         
         // TODO: specify background rect in projected space to 
         Rect bgRect = new Rect(2, 1, -0.5f);
@@ -311,7 +317,7 @@ public class Test {
 		exitOnGLError("D");
 
 		View view = new View();
-		view.translateView(40, 30, -50);
+		//view.translateView(40, 30, -50);
 		
 		// ugly as hell
 		view.loadCubeTexture("assets/images/env1");
@@ -377,9 +383,8 @@ public class Test {
 		// falling blocks are generated at fixed rate, so we
 		
         for (int i = 0; i < N; i++) {
-        	final Object obj = fbTransition(om.new Obj(glass, cube, farAway()));
-        	//reserve.add(obj);
-        	
+        	Obj obj = om.new Obj(glass, sphere); //fbTransition(om.new Obj(glass, cube, farAway()));
+        	reserve.add(obj);
         	// objects in reserve will become fallingblocks after a while
         }
         	
@@ -450,6 +455,12 @@ public class Test {
     	
     	int textPos = 0;
     	
+    	Buffers buffers = new Buffers(N);
+    	
+    	// some temp testing stuff
+//    	TODO: make proper sine scroller
+//    	      could also apply some functions to the target point (like y = base + sin(C*t*x))
+    	List<Binder> binders = new ArrayList<>();
     	
     	float scale = 0.005f;
 		while (!Display.isCloseRequested()) {
@@ -485,6 +496,19 @@ public class Test {
 				if (Keyboard.isKeyDown(Keyboard.KEY_S)) {
 					view.translateView(0,  0, -step);
 				}
+				if (Keyboard.isKeyDown(Keyboard.KEY_Z)) {
+					for (Binder b : binders) {
+						b.getParent().getWorldTransform().rotate(0.4f, new Vector3f(0, 1, 0));
+					}
+					
+					//view.translateView(0,  0, step);
+				}
+				if (Keyboard.isKeyDown(Keyboard.KEY_X)) {
+					for (Binder b : binders) {
+						b.getParent().getWorldTransform().rotate(-0.4f, new Vector3f(0, 1, 0));
+					}
+					//view.translateView(0,  0, -step);
+				}
 			}
 			while (Keyboard.next()) {
 				final char ch = Keyboard.getEventCharacter();
@@ -500,7 +524,18 @@ public class Test {
 					t0 = nextCharMinTime;
 				}
 				nextCharMinTime = t0 + charInterval;
+
+				Binder b = createChar(ch, reserve);
+				binders.add(b);
+				controllers.add(b);
 				
+				rnd(p0, 10);
+				b.getParent().setTransform(p0, true, 1); // TODO: proper control for parent (how to move character)
+				
+				// who will step controller?
+				// who will control parent object
+				
+				/*
 				someObj.add(new Event() {
 					@Override
 					public boolean update(double _t, long time_ns) {
@@ -511,11 +546,22 @@ public class Test {
 						return false;
 					}
 				});
+				*/
 				
 				
 				// place composite in scene
 				// detach some objects and put them into composite
 			}
+
+			
+			
+			
+			buffers.clear();
+			
+			// after object transformations and other attributes have been updated for this frame
+			// we can prepare rendering buffers
+	        om.prepareBuffers(buffers);
+			
 			
 			view.setWorldLight(1, (float)(2*Math.sin(frame*0.01f)), -1);
 
@@ -525,7 +571,7 @@ public class Test {
 
 			// manually updating view for every program... refactor when there are more programs
 			//glass.useView(view);
-			background.useView(view);
+			background.useGlobals(view, t);
 			
 			glClearColor(255/255.0f, 105/255.0f, 180/255.0f, 1.0f);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -563,8 +609,11 @@ public class Test {
 			
 			bgRect.draw();
 			
-	        glEnable(GL_DEPTH_TEST);
-			om.drawObjectsAt(view, time_ns);
+			glEnable(GL_DEPTH_TEST);
+			buffers.draw(view, t);
+	        
+	        
+			//om.drawObjectsAt(view, time_ns);
 			
 			// if drawing multiple things with same program,
 			// pass all transformations and drawables to program in one call
@@ -600,8 +649,16 @@ public class Test {
 			Display.update();
 			frame++;
 	    	long time = System.nanoTime();
-	    	frameTimes.add(time-frameStart);
+	    	long dt_ns = time-frameStart;
+	    	frameTimes.add(dt_ns);
 	    	frameStart = time;
+
+	    	float dt = (float)(dt_ns / 1000000000.0);
+	    	double time_s = time / 1000000000.0;
+	    	for (Controller c : controllers) {
+	    		c.step(time_s, dt);
+	    	}
+	    	
 	    	
 	    	long d_ns = time - prevPrintTime;
 	    	if (d_ns > 2000*1000000L) {
@@ -613,7 +670,7 @@ public class Test {
 	    		if (frames > 0) {
 	    			long med = ((frames & 1) == 1) ? frameTimes.get((frames - 1) / 2) : (frameTimes.get(frames/2) + frameTimes.get(frames/2 - 1))/2;
 			    	Log.d(String.format("Last %.2f s frametime avg/med/min/max : %.1f/%.1f/%.1f/%.1f ms",
-			    			d_ms*1000,d_ms/frames, med/1000000.0, frameTimes.get(0)/1000000.0, frameTimes.get(frames - 1)/1000000.0));
+			    			d_ms/1000,d_ms/frames, med/1000000.0, frameTimes.get(0)/1000000.0, frameTimes.get(frames - 1)/1000000.0));
 	    		} else {
 	    			Log.d(String.format("Last %.2f s no frames rendered", d_ms*1000));	    			
 	    		}

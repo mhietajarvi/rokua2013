@@ -5,17 +5,11 @@ uniform vec3 U_POINT_LIGHT_1_3F;  // The position of light in world space.
 uniform vec3 U_EYE_WORLD_POS_3F;  // The position of eye in world space.
 uniform samplerCube U_ENV_CUBE;
 
-//in float f_color_mult;
-
 in Fragment {
 	vec3 world_pos;
-	flat vec3 world_nrm;
+	vec3 world_nrm;
 	flat vec4 color;
 };
-
-//in vec3 f_world_pos;
-//in vec3 f_world_nrm;
-//in vec4 f_color;
 
 out vec4 out_color;
 

@@ -32,11 +32,6 @@ public class ObjManager2 {
 	}
 	*/
 	
-	public interface Transformable {
-		
-	}
-
-	
 	
 	public class Obj {
 		
@@ -47,18 +42,19 @@ public class ObjManager2 {
 		private Obj parent;         // can be null
 
 		// current model-to-parent or model-to-world transform
-		private Matrix4f transform; // new Matrix4f();
+		private Matrix4f transform = new Matrix4f();
 		
 		// true if transform is the final model-to-world transform
 		private boolean model_to_world;
 
 		// transformation used in previous time step
 		// (can be used to determine object positional and rotational velocities)
-		private Matrix4f prev_transform; // new Matrix4f();
+		private Matrix4f prev_transform = new Matrix4f();
 		
 		// needed for velocity calculations (where do we get this?)
-		private long time;
-		private long prev_time;
+//		private long time;
+//		private long prev_time;
+		private float dt;
 		
 		// simple variables (probably needs to be redesigned when I know what I am doing...)
 		private Map<Uniform, Float> values = new HashMap<>();
@@ -71,6 +67,26 @@ public class ObjManager2 {
 //			return transform;
 //		}
 		
+		public Obj setTransform(Vector3f p, boolean model_to_world, float dt) {
+			
+			//if (this.time < time) {
+			Matrix4f tmp = prev_transform;
+			prev_transform = transform;
+			transform = tmp;
+			this.dt = dt;
+			//this.prev_time = this.time;
+			//}
+			//this.time = time;
+			this.model_to_world = model_to_world;
+			transform.m30 = p.x;
+			transform.m31 = p.y;
+			transform.m32 = p.z;
+			
+			// TODO: we need to specify rotation also, otherwise old rotation is used...
+			return this;
+		}
+		
+		/*
 		public Obj setTransform(Matrix4f m, boolean model_to_world, long time) {
 			
 			if (this.time < time) {
@@ -82,6 +98,7 @@ public class ObjManager2 {
 			this.model_to_world = model_to_world;
 			return this;
 		}
+		*/
 		
 		public Obj set(Uniform u, float value) {
 			values.put(u, value);
@@ -122,27 +139,34 @@ public class ObjManager2 {
 		// keep previous world transform
 		// world position and velocity are simply determined from diff to prev 
 		
-		Vector3f getWorldPosition() {
+		void getWorldPosition(Vector3f p) {
 			
 			Matrix4f m = getWorldTransform();
-			return new Vector3f(m.m30, m.m31, m.m32);
+			p.x = m.m30;
+			p.y = m.m31;
+			p.z = m.m32;
+			//return new Vector3f(m.m30, m.m31, m.m32);
 		}
 		
-		Vector3f getWorldVelocity() {
+		void getWorldVelocity(Vector3f v) {
 			
 			Matrix4f m1 = getWorldTransform();
 			Matrix4f m0 = prev_transform;
-			return (Vector3f)new Vector3f(
-					m1.m30 - m0.m30,
-					m1.m31 - m0.m31,
-					m1.m32 - m0.m32).scale( 1000000000.0f / (time - prev_time));
+			float scale = dt > 0.00001f ? 1 / dt : 0;
+			v.x = (m1.m30 - m0.m30)*scale;
+			v.y = (m1.m31 - m0.m31)*scale;
+			v.z = (m1.m32 - m0.m32)*scale;
+//			return (Vector3f)new Vector3f(
+//					m1.m30 - m0.m30,
+//					m1.m31 - m0.m31,
+//					m1.m32 - m0.m32).scale( 1000000000.0f / (time - prev_time));
 		}
 		
 		Matrix4f getWorldTransform() {
 			
-			if (transform == null) {
-				transform = new Matrix4f();
-			}
+//			if (transform == null) {
+//				transform = new Matrix4f();
+//			}
 			if (!model_to_world && parent != null) {
 				Matrix4f.mul(parent.getWorldTransform(), transform, transform);
 				model_to_world = true;
@@ -202,7 +226,7 @@ public class ObjManager2 {
 	// this step should prepare stuff to be rendered, not call opengl directly
 	// (create buffers that can be rendered directly)
 
-	public class Buffers {
+	public static class Buffers {
 		
 		public class DrawEntry {
 			final Program program;
@@ -223,13 +247,21 @@ public class ObjManager2 {
 			entries.clear();
 			transforms.clear();
 		}
-		public void draw(View view) {
+		public void draw(View view, double t) {
+			transforms.rewind();
+			
 			for (DrawEntry e : entries) {
-				e.program.useView(view);
+				e.program.useGlobals(view, t);
 				int instancesRemaining = e.instanceCount;
 				while (instancesRemaining > 0) {
+					//Log.d("instancesRemaining : "+instancesRemaining);
 					int batch_size = Math.min(instancesRemaining, e.program.maxInstanced());
-					transforms.limit(transforms.position() + batch_size*4*4);
+					//Log.d("batch_size : "+batch_size);
+					int new_limit = transforms.position() + batch_size*4*4;
+					//Log.d("new limit : "+new_limit+", capacity : "+transforms.capacity());
+					//Log.d("transforms : "+transforms);
+					transforms.limit(new_limit);
+					
 					e.program.setUniform(Uniform.U_MODEL_TO_WORLD_M4, transforms);
 					transforms.position(transforms.limit());
 					e.drawable.drawInstanced(batch_size);
@@ -239,13 +271,16 @@ public class ObjManager2 {
 		}
 		
 		// add multiple objects using same drawable
-		public void add(Program program, Drawable drawable, List<Obj> objects) {
+		private void add(Program program, Drawable drawable, List<Obj> objects) {
 			
 			entries.add(new DrawEntry(program, drawable, objects.size()));
 			for (Obj o : objects) {
 				o.getWorldTransform().store(transforms);
 			}
 		}
+//		private void flip() {
+//			transforms.flip();
+//		}
 		// Matrix4f world_to_projected
 		// instance count
 	}
@@ -261,6 +296,7 @@ public class ObjManager2 {
 				b.add(program, drawable, e2.getValue());
 			}
 		}
+		//b.flip();
 	}
 	
 	// draw objects by program/drawable to take advantage of instancing
