@@ -49,9 +49,9 @@ mat3 rotx(float a) {
 mat3 roty(float a) {
 	float s = sin(a);
 	float c = cos(a);
-	return mat3( c, 0, s,
+	return mat3( c, 0,-s,
 				 0, 1, 0,
-				-s, 0, c);
+				 s, 0, c);
 }
 mat3 rotz(float a) {
 	float s = sin(a);
@@ -76,7 +76,7 @@ vec3 angles(vec3 v) {
 
 
 float disp(vec3 v) {
-	return 1; // + 0.2*cos(U_TIME_F + 2*v.x) + 0.2*sin(U_TIME_F + 3*v.y) + 0.2*sin(U_TIME_F + 4*v.z);
+	return 1 + 0.2*cos(U_TIME_F + 2*v.x) + 0.2*sin(U_TIME_F + 3*v.y) + 0.2*sin(U_TIME_F + 4*v.z);
 }
 
 // The entry point for our vertex shader.
@@ -92,22 +92,25 @@ void main() {
 	
 	vec3 p1;
 	vec3 p2;
+	float mult = 1;
 	
 	if (ap.x >= ap.y && ap.x >= ap.z) {
+		mult = sign(POSITION_3F.x);
 		p1 = roty_e * POSITION_3F;
 		p2 = rotz_e * POSITION_3F;
 	} else 	if (ap.y >= ap.x && ap.y >= ap.z) {
-		p1 = rotx_e * POSITION_3F;
-		p2 = rotz_e * POSITION_3F;
+		mult = sign(POSITION_3F.y);
+		p1 = rotz_e * POSITION_3F;
+		p2 = rotx_e * POSITION_3F;
 	} else {
+		mult = sign(POSITION_3F.z);
 		p1 = roty_e * POSITION_3F;
 		p2 = rotx_e * POSITION_3F;
 	}
 	
-	
 	p1 = p1 * disp(p1);
 	p2 = p2 * disp(p2);
-	vec3 model_nrm = normalize(cross(p1 - p0, p2 - p0));
+	vec3 model_nrm = normalize(mult*cross(p2 - p0, p1 - p0));
 	
 	
 	vec4 wp = U_MODEL_TO_WORLD_M4[gl_InstanceID] * vec4(POSITION_3F * (disp(POSITION_3F)), 1);

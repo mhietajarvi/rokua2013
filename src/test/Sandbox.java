@@ -1,5 +1,8 @@
 package test;
 
+import org.lwjgl.util.vector.Matrix3f;
+import org.lwjgl.util.vector.Vector3f;
+
 
 public class Sandbox {
 
@@ -49,9 +52,88 @@ public class Sandbox {
 		}
 	}
 
+	Matrix3f rotz(float angle) {
+		float s = (float)Math.sin(angle);
+		float c = (float)Math.cos(angle);
+		Matrix3f m = new Matrix3f();
+		m.m00 =  c; m.m10 =  s;
+		m.m01 = -s; m.m11 =  c;
+		return m;
+	}
+	Matrix3f roty(float angle) {
+		float s = (float)Math.sin(angle);
+		float c = (float)Math.cos(angle);
+		Matrix3f m = new Matrix3f();
+		m.m00 =  c; m.m20 =  s;
+		m.m02 = -s; m.m22 =  c;
+		return m;
+	}
+	Matrix3f rotx(float angle) {
+		float s = (float)Math.sin(angle);
+		float c = (float)Math.cos(angle);
+		Matrix3f m = new Matrix3f();
+		m.m11 =  c; m.m21 = -s;
+		m.m12 =  s; m.m22 =  c;
+		return m;
+	}
+	
+	final float eps = 0.063273f;
+	final Matrix3f rx = rotx(eps);
+	final Matrix3f ry = roty(eps);
+	final Matrix3f rz = rotz(eps);
+	
+	public void test4(Vector3f p0) {
+
+		float ax = Math.abs(p0.x);
+		float ay = Math.abs(p0.y);
+		float az = Math.abs(p0.z);
+		Vector3f p1 = new Vector3f();
+		Vector3f p2 = new Vector3f();
+		float mult = 1;
+		if (ax >= ay && ax >= az) {
+			mult = Math.signum(p0.x);
+			Matrix3f.transform(ry, p0, p1);
+			Matrix3f.transform(rz, p0, p2);
+		} else 	if (ay >= ax && ay >= az) {
+			mult = Math.signum(p0.y);
+			Matrix3f.transform(rz, p0, p1);
+			Matrix3f.transform(rx, p0, p2);
+		} else {
+			mult = Math.signum(p0.z);
+			Matrix3f.transform(ry, p0, p1);
+			Matrix3f.transform(rx, p0, p2);
+		}
+		System.out.println("p0 : "+p0);
+		System.out.println("p1 : "+p1);
+		System.out.println("p2 : "+p2);
+		Vector3f d1 = Vector3f.sub(p1, p0, null);
+		Vector3f d2 = Vector3f.sub(p2, p0, null);
+		System.out.println("p1-p0 : "+d1);
+		System.out.println("p2-p0 : "+d2);
+		Vector3f n = Vector3f.cross(d2, d1, null);
+		n.scale(mult);
+		n.normalise();
+		System.out.println("n     : "+n);
+		System.out.println();
+	}
 	
 	public void test3() {
+	
+		Vector3f xx = new Vector3f(1,0,0);
+		Vector3f yy = new Vector3f(0,1,0); 
+		Vector3f zz = new Vector3f(0,0,1);
+		Vector3f xxn = new Vector3f(-1,0,0);
+		Vector3f yyn = new Vector3f(0,-1,0); 
+		Vector3f zzn = new Vector3f(0,0,-1);
+
+		test4(xx);
+		test4(yy);
+		test4(zz);
+		test4(xxn);
+		test4(yyn);
+		test4(zzn);
 		
+		//Matrix3f mx = new Matrix3f();
 		//Log.d("%.1f", Math.a(4))
 	}
 	
