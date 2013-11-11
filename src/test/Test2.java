@@ -307,7 +307,7 @@ public class Test2 {
         
         // GLU.gluLookAt(eyex, eyey, eyez, centerx, cente§ry, centerz, upx, upy, upz);
         Cube cube = new Cube(0.5f);
-        Sphere sphere = new Sphere(1, 4);
+        Sphere sphere = new Sphere(1, 5);
         
         // TODO: specify background rect in projected space to 
         Rect bgRect = new Rect(2, 1, -0.5f);

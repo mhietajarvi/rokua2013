@@ -39,6 +39,32 @@ out Fragment {
 //out vec3 mpos;
 //out float v_color_mult;
 
+mat3 rotx(float a) {
+	float s = sin(a);
+	float c = cos(a);
+	return mat3( 1, 0, 0,
+				 0, c, s,
+				 0,-s, c);
+}
+mat3 roty(float a) {
+	float s = sin(a);
+	float c = cos(a);
+	return mat3( c, 0, s,
+				 0, 1, 0,
+				-s, 0, c);
+}
+mat3 rotz(float a) {
+	float s = sin(a);
+	float c = cos(a);
+	return mat3( c,-s, 0,
+				 s, c, 0,
+				 0, 0, 1);
+}
+float eps = 0.02;
+mat3 rotx_e = rotx(eps);
+mat3 roty_e = roty(eps);
+mat3 rotz_e = rotz(eps);
+
 vec3 angles(vec3 v) {
 
 	return vec3(atan(v.x, sqrt(v.z*v.z + v.y*v.y)),
@@ -48,13 +74,9 @@ vec3 angles(vec3 v) {
 	//return vec2(atan(v.z, sqrt(v.x*v.x + v.y*v.y)),atan(v.y, v.x));
 }
 
-//float es = sin(0.01);
-//float ec = cos(0.01);
-
-
 
 float disp(vec3 v) {
-	return 1 + 0.2*cos(U_TIME_F + 2*v.x) + 0.2*sin(U_TIME_F + 3*v.y) + 0.2*sin(U_TIME_F + 4*v.z);
+	return 1; // + 0.2*cos(U_TIME_F + 2*v.x) + 0.2*sin(U_TIME_F + 3*v.y) + 0.2*sin(U_TIME_F + 4*v.z);
 }
 
 // The entry point for our vertex shader.
@@ -64,9 +86,33 @@ void main() {
 	//float disp = 1 + 0.2*cos(U_TIME_F + 7*a.x + 3*a.y + 5*a.z); // + 0.0*sin(U_TIME_F + l.y);
 	//float disp = 1 + 0.2*cos(U_TIME_F + 2*POSITION_3F.x) + 0.2*sin(U_TIME_F + 3*POSITION_3F.y) + 0.2*sin(U_TIME_F + 4*POSITION_3F.z); // + 0.0*sin(U_TIME_F + l.y);
 	
+	vec3 ap = abs(POSITION_3F);
+	
+	vec3 p0 = POSITION_3F * (disp(POSITION_3F));
+	
+	vec3 p1;
+	vec3 p2;
+	
+	if (ap.x >= ap.y && ap.x >= ap.z) {
+		p1 = roty_e * POSITION_3F;
+		p2 = rotz_e * POSITION_3F;
+	} else 	if (ap.y >= ap.x && ap.y >= ap.z) {
+		p1 = rotx_e * POSITION_3F;
+		p2 = rotz_e * POSITION_3F;
+	} else {
+		p1 = roty_e * POSITION_3F;
+		p2 = rotx_e * POSITION_3F;
+	}
+	
+	
+	p1 = p1 * disp(p1);
+	p2 = p2 * disp(p2);
+	vec3 model_nrm = normalize(cross(p1 - p0, p2 - p0));
+	
+	
 	vec4 wp = U_MODEL_TO_WORLD_M4[gl_InstanceID] * vec4(POSITION_3F * (disp(POSITION_3F)), 1);
 	world_pos = vec3(wp);
-	world_nrm = mat3x3(U_MODEL_TO_WORLD_M4[gl_InstanceID]) * NORMAL_3F; // + vec3(0.2*cos(U_TIME_F + 3*POSITION_3F.y),0,0)) ;
+	world_nrm = mat3x3(U_MODEL_TO_WORLD_M4[gl_InstanceID]) * model_nrm;
 	color = COLOR_4F;
 	gl_Position = U_WORLD_TO_PROJECTED_M4 * wp;
 	
