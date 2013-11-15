@@ -142,7 +142,7 @@ public class Test2 {
 		new Test2().run();
 	}
 
-	int N = 10;
+	int N = 200;
 	
 	Deque<Obj> reserve = new ArrayDeque<>(N);
 	Deque<Obj> fallingBlocks = new ArrayDeque<>(N);
@@ -161,6 +161,8 @@ public class Test2 {
 		
 		return new Simple.Position(0, farAwayPos());
 	}
+
+	
 	
 	int nextFb = 0;
 	double fbInterval = 0.01;
@@ -307,14 +309,19 @@ public class Test2 {
         //Drawable dCube = cube.prepare(p);
 		exitOnGLError("D");
 
-		View view = new View();
+		View lightView = new View();
+		
+		
+		View camera = new View();
+        Lights lights = new Lights();
 		//view.translateView(40, 30, -50);
 		
-		// ugly as hell
-		//view.loadCubeTexture("assets/images/env1");
-		view.loadCubeTexture("assets/images/env1");
 		
+		final int envCubeTU = 0;
 		
+		int cubeTexture = Textures.loadCubeTexture("assets/images/env1", envCubeTU);
+        noise.bind(Uniform.U_ENV_CUBE, envCubeTU);
+		background.bind(Uniform.U_ENV_CUBE, envCubeTU);
 		
 		//view.setProjection(60, 0.1f, 100f, Display.getWidth(), Display.getHeight());
 		
@@ -380,7 +387,7 @@ public class Test2 {
         	// objects in reserve will become fallingblocks after a while
         }
         	
-        
+		
         /*
         	//Position p = new Position((rnd.nextFloat() - 0.5f)*20, (rnd.nextFloat() - 0.5f)*30, (rnd.nextFloat() - 0.5f)*20);
         	//Rotation r = new Rotation((rnd.nextFloat() - 0.5f)*20, (rnd.nextFloat() - 0.5f)*30, (rnd.nextFloat() - 0.5f)*20, rnd.nextFloat());
@@ -448,6 +455,9 @@ public class Test2 {
     	int textPos = 0;
     	
     	Buffers buffers = new Buffers(N);
+
+		FrameBuffer frameBuffer = new FrameBuffer(300, 300);			
+
     	
     	// some temp testing stuff
 //    	TODO: make proper sine scroller
@@ -468,25 +478,25 @@ public class Test2 {
 			int dy = Mouse.getDY();
 			if (dx != 0 || dy != 0) {
 				if (Mouse.isButtonDown(0)) {
-					view.rotateView(dx*scale, dy*scale);
+					camera.rotateView(dx*scale, dy*scale);
 				} else if (Mouse.isButtonDown(1)) {
-					view.translateView(dx*scale, dy*scale, 0);
+					camera.translateView(dx*scale, dy*scale, 0);
 				}
 			}
 			float step = 0.3f;
 			//if (Keyboard.isKeyDown(Keyboard.KEY))
 			if (!Keyboard.isKeyDown(Keyboard.KEY_RSHIFT) && !Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)) {
 				if (Keyboard.isKeyDown(Keyboard.KEY_A)) {
-					view.translateView(step, 0, 0);
+					camera.translateView(step, 0, 0);
 				}
 				if (Keyboard.isKeyDown(Keyboard.KEY_D)) {
-					view.translateView(-step, 0, 0);
+					camera.translateView(-step, 0, 0);
 				}
 				if (Keyboard.isKeyDown(Keyboard.KEY_W)) {
-					view.translateView(0,  0, step);
+					camera.translateView(0,  0, step);
 				}
 				if (Keyboard.isKeyDown(Keyboard.KEY_S)) {
-					view.translateView(0,  0, -step);
+					camera.translateView(0,  0, -step);
 				}
 				if (Keyboard.isKeyDown(Keyboard.KEY_Z)) {
 					for (Binder b : binders) {
@@ -544,65 +554,62 @@ public class Test2 {
 				// place composite in scene
 				// detach some objects and put them into composite
 			}
-
 			
 			
-			
+	// prepare geometry for drawing
 			buffers.clear();
-			
 			// after object transformations and other attributes have been updated for this frame
 			// we can prepare rendering buffers
-	        om.prepareBuffers(buffers);
+			om.prepareBuffers(buffers);
 			
+	// move lights (TODO: these should be controlled just like geometry) 
+			lights.setWorldLight(1, (float)(2*Math.sin(frame*0.01f)), -1);
+
+	// render shadow map
+			// TODO: set lightview to match some light position and direction
+			frameBuffer.selectAsRenderTarget();
+			lightView.setProjection(60, 0.1f, 1000f, frameBuffer.w, frameBuffer.h);
+			glViewport(0, 0, frameBuffer.w, frameBuffer.h);
 			
-			view.setWorldLight(1, (float)(2*Math.sin(frame*0.01f)), -1);
+			glEnable(GL_DEPTH_TEST);
+			
+			// TODO: we probably want to use cheapest possible shaders for shadow map generation...
+			buffers.draw(lightView, null, t);
+	        
+	        
+	        camera.setProjection(60, 0.1f, 1000f, Display.getWidth(), Display.getHeight());
+	        glViewport(0, 0, Display.getWidth(), Display.getHeight());
+	    	
+
+	        
+	        
+
+
+	        FrameBuffer.setDefaultRenderTarget();
+			
 
 			
-			view.setProjection(60, 0.1f, 1000f, Display.getWidth(), Display.getHeight());
-			glViewport(0, 0, Display.getWidth(), Display.getHeight());
 
 			// manually updating view for every program... refactor when there are more programs
 			//glass.useView(view);
-			background.useGlobals(view, t);
+			background.useView(camera);
+			background.useTime(t);
 			
 			glClearColor(255/255.0f, 105/255.0f, 180/255.0f, 1.0f);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			
-            // rr.setLightPos(x2, y2, 3+x);
+			//glActiveTexture(GL_TEXTURE0 + view.envCubeSampler);
+			//glBindTexture(GL_TEXTURE_CUBE_MAP, view.envCubeTexture);
 			
-	    	glActiveTexture(GL_TEXTURE0 + view.envCubeSampler);
-			glBindTexture(GL_TEXTURE_CUBE_MAP, view.envCubeTexture);
-
-			//view.world_to_view
-			// need view-to-world transformation
-			//Matrix4f view_to_world = new Matrix4f(world_to_view);
-//			Matrix4f world_to_projected = Matrix4f.mul(view.projection, view.world_to_view, null);
-			
-			// update background to cover view
-			//view.projection
-//			view_to_world.m30 = 0;
-//			view_to_world.m31 = 0;
-//			view_to_world.m32 = 0;
-//			view_to_world.m33 = 1;
-//			Matrix4f projected_to_world = Matrix4f.invert(world_to_projected,  null);
-//			Vector4f v = Matrix4f.transform(world_to_projected, new Vector4f(1,1,1,1), null);
-//			Log.d("world_to_projected:\n"+world_to_projected);
-//			Log.d(" transformed:\n"+v);
-//			Matrix4f.transform(projected_to_world, new Vector4f(1,1,0,-1), v);
-//			Log.d("projected_to_world:\n"+projected_to_world);
-//			Log.d(" transformed:\n"+v);
-			
+		//	TODO: render to texture, then draw that texture to screen
+		//	(also draw depth buffer, just to visualize it)
 			
 	        glDisable(GL_DEPTH_TEST);
-			background.useModelTransform(view.view_to_world);
-			
-			//Log.d("model_to_view:\n"+background.model_to_view);
-			//Log.d("model_to_projected:\n"+background.model_to_projected);
-			
+			background.useModelTransform(camera.view_to_world);
 			bgRect.draw();
 			
 			glEnable(GL_DEPTH_TEST);
-			buffers.draw(view, t);
+			buffers.draw(camera, lights, t);
 	        
 	        
 			//om.drawObjectsAt(view, time_ns);
@@ -675,4 +682,11 @@ public class Test2 {
 		}
 		Display.destroy();
 	}
+
+	// view, look from X to Y
+	// 
+	
+	// draw with program
+	// 
+	
 }

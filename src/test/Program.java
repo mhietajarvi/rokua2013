@@ -176,8 +176,18 @@ public class Program {
 	Matrix4f model_to_view = new Matrix4f();
 	Matrix4f model_to_projected = new Matrix4f();
 	Matrix4f world_to_projected = new Matrix4f();
+
+	public void useLights(Lights lights) {
+		
+		glUniform3f(getIndex(Uniform.U_POINT_LIGHT_1_3F), lights.point_light_1.x, lights.point_light_1.y, lights.point_light_1.z);
+	}
 	
-	public void useGlobals(View view, double time) {
+	public void useTime(double time) {
+		
+		setUniform(Uniform.U_TIME_F, (float)time);
+	}
+	
+	public void useView(View view) {
 		
 		this.view = view;
 		Matrix4f.mul(view.projection, view.world_to_view, world_to_projected);
@@ -186,13 +196,16 @@ public class Program {
 
 		setUniform(Uniform.U_WORLD_TO_PROJECTED_M4, 1, world_to_projected);
 		
+		// TODO: lights need to be handled properly (e.g. )
         // map current lights to uniforms provided by shader program
-        glUniform3f(getIndex(Uniform.U_POINT_LIGHT_1_3F), view.point_light_1.x, view.point_light_1.y, view.point_light_1.z);
         
-        glUniform1i(getIndex(Uniform.U_ENV_CUBE), view.envCubeSampler);
+        //glUniform1i(getIndex(Uniform.U_ENV_CUBE), view.envCubeSampler);
 		setUniform(Uniform.U_EYE_WORLD_POS_3F, view.view_to_world.m30, view.view_to_world.m31, view.view_to_world.m32);
 		
-		setUniform(Uniform.U_TIME_F, (float)time);
+	}
+
+	public void bind(Uniform u, int value) {
+        glUniform1i(getIndex(u), value);
 	}
 	
 	public void bind(Uniform u, float value) {

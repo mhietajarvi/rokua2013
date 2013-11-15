@@ -247,11 +247,17 @@ public class ObjManager2 {
 			entries.clear();
 			transforms.clear();
 		}
-		public void draw(View view, double t) {
+		public void draw(View view, Lights lights, double t) {
 			transforms.rewind();
 			
 			for (DrawEntry e : entries) {
-				e.program.useGlobals(view, t);
+				
+				// need to bind textures... should texture units be statically allocated?
+				// most likely we will use same texture unit for a long period, no point rebinding
+				e.program.useView(view);
+				e.program.useLights(lights);
+				e.program.useTime(t);
+				
 				int instancesRemaining = e.instanceCount;
 				while (instancesRemaining > 0) {
 					//Log.d("instancesRemaining : "+instancesRemaining);
