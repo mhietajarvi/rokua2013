@@ -71,6 +71,11 @@ import test.Program.Uniform;
 
 public class Test2 {
 	
+	static {
+		System.setProperty("org.lwjgl.util.NoChecks", "true");
+	}
+	
+	
 	Test2() throws Exception {
 		
 	}
@@ -142,7 +147,7 @@ public class Test2 {
 		new Test2().run();
 	}
 
-	int N = 200;
+	int N = 1;
 	
 	Deque<Obj> reserve = new ArrayDeque<>(N);
 	Deque<Obj> fallingBlocks = new ArrayDeque<>(N);
@@ -262,7 +267,7 @@ public class Test2 {
 	public void run() throws Exception {
 		
 		Display.setDisplayMode(new DisplayMode(800, 400));
-		Display.setVSyncEnabled(true);
+		Display.setVSyncEnabled(false);
 		//Display.setFullscreen(true);
 		Display.setTitle("Rokua2013");
 		Display.create(new PixelFormat(), new ContextAttribs(3, 2).withProfileCore(true).withForwardCompatible(true));
@@ -572,19 +577,17 @@ public class Test2 {
 			glViewport(0, 0, frameBuffer.w, frameBuffer.h);
 			
 			glEnable(GL_DEPTH_TEST);
-			
 			// TODO: we probably want to use cheapest possible shaders for shadow map generation...
 			buffers.draw(lightView, null, t);
+			
+			// what to do with frameBuffer?
+			// to test, render a quad that uses the resulting texture
+			
+			// 
 	        
 	        
 	        camera.setProjection(60, 0.1f, 1000f, Display.getWidth(), Display.getHeight());
 	        glViewport(0, 0, Display.getWidth(), Display.getHeight());
-	    	
-
-	        
-	        
-
-
 	        FrameBuffer.setDefaultRenderTarget();
 			
 

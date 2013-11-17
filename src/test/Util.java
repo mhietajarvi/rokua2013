@@ -75,6 +75,13 @@ public class Util {
 	static void copy(Vector3f v, float[] c) {
 		c[0] = v.x; c[1] = v.y; c[2] = v.z;
 	}
+
+	static FloatBuffer put(float[][] data, FloatBuffer buf) {
+		for (float[] d2 : data) {
+			buf.put(d2);
+		}
+		return buf;
+	}
 	
 	static FloatBuffer put(float[][][] data, FloatBuffer buf) {
 		for (float[][] d1 : data) {

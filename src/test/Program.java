@@ -82,7 +82,14 @@ public class Program {
 	
 	private FloatBuffer buf = BufferUtils.createFloatBuffer(maxInstanced()*4*4);
 	
-
+	private static int currentProgram = -1;
+	
+	private void useProgram() {
+		if (currentProgram != program) {
+			glUseProgram(program);
+		}
+	}
+	
 	public Program(String dir) throws IOException {
 
 		this(Util.find(dir, "vertex.*"), Util.find(dir, "geometry.*"), Util.find(dir, "fragment.*"));
@@ -179,11 +186,13 @@ public class Program {
 
 	public void useLights(Lights lights) {
 		
+		useProgram();
 		glUniform3f(getIndex(Uniform.U_POINT_LIGHT_1_3F), lights.point_light_1.x, lights.point_light_1.y, lights.point_light_1.z);
 	}
 	
 	public void useTime(double time) {
 		
+		useProgram();
 		setUniform(Uniform.U_TIME_F, (float)time);
 	}
 	
@@ -192,7 +201,7 @@ public class Program {
 		this.view = view;
 		Matrix4f.mul(view.projection, view.world_to_view, world_to_projected);
 		
-		glUseProgram(program);
+		useProgram();
 
 		setUniform(Uniform.U_WORLD_TO_PROJECTED_M4, 1, world_to_projected);
 		
@@ -205,18 +214,27 @@ public class Program {
 	}
 
 	public void bind(Uniform u, int value) {
-        glUniform1i(getIndex(u), value);
+		
+		int index = getIndex(u);
+		if (index != -1) {
+			useProgram();
+			glUniform1i(index, value);
+		}
 	}
 	
 	public void bind(Uniform u, float value) {
-        glUniform1f(getIndex(u), value);
+		int index = getIndex(u);
+		if (index != -1) {
+			useProgram();
+			glUniform1f(getIndex(u), value);
+		}
 	}
-	
 	
 	public void setUniform(Uniform u, FloatBuffer buf) {
 		
 		int index = getIndex(u);
 		if (index != -1) {
+			useProgram();
 	        glUniformMatrix4(index, false, buf);
 		}
 	}
@@ -230,6 +248,7 @@ public class Program {
 	    		matrices[i].store(buf);
 	    	}
 	    	buf.flip();
+			useProgram();
 	        glUniformMatrix4(index, false, buf);
 		}
 	}
@@ -238,14 +257,16 @@ public class Program {
 		
 		int index = getIndex(u);
 		if (index != -1) {
+			useProgram();
 	        glUniform3f(index, v0, v1, v2);
 		}
 	}
 	
 	public void setUniform(Uniform u, float f) {
-		
+
 		int index = getIndex(u);
 		if (index != -1) {
+			useProgram();
 	        glUniform1f(index, f);
 		}
 	}
@@ -253,13 +274,15 @@ public class Program {
 
 	public void useModelTransforms(Matrix4f[] model_to_world, int count) {
 
+		useProgram();
+		
 		setUniform(Uniform.U_MODEL_TO_WORLD_M4, count, model_to_world);
 		setUniform(Uniform.U_WORLD_TO_PROJECTED_M4, 1, world_to_projected);
 	}
 	
 	public void useModelTransform(Matrix4f model_to_world) {
-		
-		glUseProgram(program);
+
+		useProgram();
 		
 		Matrix4f.mul(view.world_to_view, model_to_world, model_to_view);
 		Matrix4f.mul(view.projection, model_to_view, model_to_projected);

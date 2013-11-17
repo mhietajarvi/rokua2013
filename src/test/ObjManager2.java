@@ -255,7 +255,9 @@ public class ObjManager2 {
 				// need to bind textures... should texture units be statically allocated?
 				// most likely we will use same texture unit for a long period, no point rebinding
 				e.program.useView(view);
-				e.program.useLights(lights);
+				if (lights != null) {
+					e.program.useLights(lights);
+				}
 				e.program.useTime(t);
 				
 				int instancesRemaining = e.instanceCount;
