@@ -1,29 +1,13 @@
 package test;
 
-import java.nio.FloatBuffer;
-import java.nio.ShortBuffer;
+import java.util.Arrays;
 
-import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL30;
-import org.lwjgl.opengl.GL31;
 import org.lwjgl.util.vector.Vector3f;
 
 
-public class Sphere implements Drawable {
+public class Sphere extends DrawableBase {
 
-	private final FloatBuffer attribs;
-	private final ShortBuffer indices;
-	int vao;
-	int vbo;
-	int ibo;
-
-	//private int triCount;
-	
-	/**
-	 */
 	public Sphere(float r, int subdivisions) {
 
 		// create one 1/8th and mirror it around
@@ -41,117 +25,47 @@ public class Sphere implements Drawable {
 			}
 		}
 		
-		float[] nrm = new float[s.length*3];
-		float[] clr = new float[s.length*4];
-		int p = 0;
-		int c = 0;
-		for (Vector3f v : s) {
-			nrm[p++] = v.x;
-			nrm[p++] = v.y;
-			nrm[p++] = v.z;
-			clr[c++] = v.x;
-			clr[c++] = v.y;
-			clr[c++] = v.z;
-			clr[c++] = 1.0f;
-		}
-		float[] pos = new float[nrm.length];
-		for (int i = 0; i < nrm.length; i++) {
-			pos[i] = nrm[i]*r;
+		float[][] pos = new float[s.length][];
+		float[][] nrm = new float[s.length][];
+		float[][] clr = new float[s.length][];
+		for (int i = 0; i < s.length; i++) {
+			pos[i] = new float[]{ r*s[i].x, r*s[i].y, r*s[i].z };
+			nrm[i] = new float[]{   s[i].x,   s[i].y,   s[i].z };
+			clr[i] = new float[]{   s[i].x,   s[i].y,   s[i].z, 1.0f };
 		}
 		short[] idx = triIndices(s);
 		
-
-		indices = BufferUtils.createShortBuffer(8*idx.length);
-		attribs = BufferUtils.createFloatBuffer(8*pos.length + 8*nrm.length + 8*clr.length);
 		
-//		positions = ByteBuffer.allocateDirect(8*pos.length*4).order(ByteOrder.nativeOrder()).asFloatBuffer();
-//		normals = ByteBuffer.allocateDirect(8*nrm.length*4).order(ByteOrder.nativeOrder()).asFloatBuffer();
-//		colors = ByteBuffer.allocateDirect(8*clr.length*4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+		float[][] pos8 = new float[pos.length * 8][];
+		float[][] nrm8 = new float[nrm.length * 8][];
+		float[][] clr8 = new float[clr.length * 8][];
+		short[] idx8 = new short[idx.length * 8];
+		
 
 		int[] offset = new int[] { 0, 1, 0, 2, 0, 1, 0, 2 };
-
-		short[] idxtmp = new short[idx.length];
 		
 		for (int i = 0; i < offset.length; i++) {
+
+			// mirror position and normal along one axis
 			for (int j = 0; j < s.length; j++) {
-				nrm[j*3+offset[i]] *= -1;
-				pos[j*3+offset[i]] *= -1;
+				pos[j][offset[i]] *= -1;
+				nrm[j][offset[i]] *= -1;
+				pos8[i*pos.length + j] = Arrays.copyOf(pos[j], pos[j].length);
+				nrm8[i*nrm.length + j] = Arrays.copyOf(nrm[j], nrm[j].length);
+				clr8[i*clr.length + j] = Arrays.copyOf(clr[j], clr[j].length);
 			}
+			// copy indices, but flip order for odd mirroring to keep same handedness (for front/back culling)
 			for (int j = 0; j < idx.length; j++) {
-				idxtmp[j] = (short) (s.length*i + idx[(i & 1) == 0 ? idx.length - 1 - j : j]);
+				idx8[i*idx.length + j] = (short) (s.length*i + idx[(i & 1) == 0 ? idx.length - 1 - j : j]);
 			}
-			
-			indices.put(idxtmp);
-			
-			attribs.position(i*pos.length);
-			attribs.put(pos);
-			attribs.position(8*pos.length + i*nrm.length);
-			attribs.put(nrm);
-			attribs.position(8*pos.length + 8*nrm.length + i*clr.length);
-			attribs.put(clr);
 		}
 
-		indices.position(0);
-		attribs.position(0);
-		
-		
-		//attribs = BufferUtils.createFloatBuffer(pos.length*3*3 + nrm.length*3*3 + clr.length*3*4);
-		
-//		int posOffset = attribs.position();
-//		Util.put(pos, attribs);
-//		int nrmOffset = attribs.position();
-//		Util.put(nrm, attribs);
-//		int clrOffset = attribs.position();
-//		Util.put(clr, attribs);
-//		attribs.flip();
-
-		vao = GL30.glGenVertexArrays();
-		GL30.glBindVertexArray(vao);
-		
-		// create buffer and upload all vertex attributes
-		vbo = GL15.glGenBuffers();
-		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
-		GL15.glBufferData(GL15.GL_ARRAY_BUFFER, attribs, GL15.GL_STREAM_DRAW);
-		
-		// create buffer and upload all vertex attributes
-		ibo = GL15.glGenBuffers();
-		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, ibo);
-		GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, indices, GL15.GL_STREAM_DRAW);
-		
-
-		//int nindex = program.getIndex(Attribute.NORMAL_3F);
-		//int cindex = program.getIndex(Attribute.COLOR_4F);
-		GL20.glVertexAttribPointer(Attribute.POSITION_3F.ordinal(), 3, GL11.GL_FLOAT, false, 0, 0);
-		GL20.glEnableVertexAttribArray(Attribute.POSITION_3F.ordinal());
-		GL20.glVertexAttribPointer(Attribute.NORMAL_3F.ordinal(), 3, GL11.GL_FLOAT, false, 0, (8*pos.length)*4);
-		GL20.glEnableVertexAttribArray(Attribute.NORMAL_3F.ordinal());
-		GL20.glVertexAttribPointer(Attribute.COLOR_4F.ordinal(), 3, GL11.GL_FLOAT, false, 0, (8*pos.length + 8*nrm.length)*4);
-		GL20.glEnableVertexAttribArray(Attribute.COLOR_4F.ordinal());
-		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
-		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
-		GL30.glBindVertexArray(0);
+		init(GL11.GL_TRIANGLES, idx8,
+				Attribute.POSITION_3F, pos8,
+				Attribute.NORMAL_3F, nrm8,
+				Attribute.COLOR_4F, clr8
+				);
 	}
-
-	@Override
-	public void destroy() {
-		GL30.glDeleteVertexArrays(vao);
-		GL15.glDeleteBuffers(ibo);
-		GL15.glDeleteBuffers(vbo);
-	}
-
-	@Override
-	public void draw() {
-		GL30.glBindVertexArray(vao);
-		GL11.glDrawElements(GL11.GL_TRIANGLES, indices.capacity(), GL11.GL_UNSIGNED_SHORT, 0);
-	}
-
-	@Override
-	public void drawInstanced(int count) {
-		GL30.glBindVertexArray(vao);
-		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, ibo);
-		GL31.glDrawElementsInstanced(GL11.GL_TRIANGLES, indices.capacity(), GL11.GL_UNSIGNED_SHORT, 0, count);
-	}
-
 
 	static short[] triIndices(Vector3f[] s) {
 		

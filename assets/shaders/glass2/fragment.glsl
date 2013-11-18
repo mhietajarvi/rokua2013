@@ -26,13 +26,15 @@ void main() {
 	float distance = length(U_POINT_LIGHT_1_3F - world_pos);
 	vec3 to_light_n = normalize(U_POINT_LIGHT_1_3F - world_pos);
 	
+	vec3 wnrm = normalize(world_nrm);
+	
 	// Calculate the dot product of the light vector and vertex normal. If the normal and light vector are
 	// pointing in the same direction then it will get max illumination.
-	float diffuse = max(dot(world_nrm, to_light_n), 0.0);
+	float diffuse = max(dot(wnrm, to_light_n), 0.0);
 
 	
-	vec3 reflected = reflect(from_eye, world_nrm);
-	vec3 refracted = refract(from_eye, world_nrm, 0.8);
+	vec3 reflected = reflect(from_eye, wnrm);
+	vec3 refracted = refract(from_eye, wnrm, 0.8);
 	
 	vec4 env_reflect = texture(U_ENV_CUBE, reflected);
 	vec4 env_refract = texture(U_ENV_CUBE, refracted);

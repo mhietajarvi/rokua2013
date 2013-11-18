@@ -1,6 +1,10 @@
 package test;
 
-import static org.lwjgl.opengl.GL11.GL_TRUE;
+import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL12.*;
+import static org.lwjgl.opengl.GL13.*;
+import static org.lwjgl.opengl.GL14.*;
+import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL21.*;
 import static org.lwjgl.opengl.GL30.*;
@@ -17,6 +21,8 @@ import java.util.Arrays;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.util.vector.Matrix4f;
+
+import test.Textures.Texture;
 //import org.lwjgl.opengl.GL20;
 
 /*
@@ -61,7 +67,9 @@ public class Program {
 		U_POINT_LIGHT_3_3F,
 
 		// 
-		U_ENV_CUBE
+		U_ENV_CUBE,
+		U_TEXTURE_1,
+		U_TEXTURE_2
 	}
 
 //	public static enum Attribute {
@@ -87,6 +95,7 @@ public class Program {
 	private void useProgram() {
 		if (currentProgram != program) {
 			glUseProgram(program);
+			currentProgram = program; 
 		}
 	}
 	
@@ -212,6 +221,10 @@ public class Program {
 		setUniform(Uniform.U_EYE_WORLD_POS_3F, view.view_to_world.m30, view.view_to_world.m31, view.view_to_world.m32);
 		
 	}
+	
+	public void bind(Uniform u, Texture texture) {
+		bind(u, texture.getSampler());
+	}
 
 	public void bind(Uniform u, int value) {
 		
@@ -272,13 +285,13 @@ public class Program {
 	}
 	
 
-	public void useModelTransforms(Matrix4f[] model_to_world, int count) {
-
-		useProgram();
-		
-		setUniform(Uniform.U_MODEL_TO_WORLD_M4, count, model_to_world);
-		setUniform(Uniform.U_WORLD_TO_PROJECTED_M4, 1, world_to_projected);
-	}
+//	public void useModelTransforms(Matrix4f[] model_to_world, int count) {
+//
+//		useProgram();
+//		
+//		setUniform(Uniform.U_MODEL_TO_WORLD_M4, count, model_to_world);
+//		setUniform(Uniform.U_WORLD_TO_PROJECTED_M4, 1, world_to_projected);
+//	}
 	
 	public void useModelTransform(Matrix4f model_to_world) {
 

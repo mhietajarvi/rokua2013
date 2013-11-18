@@ -1,17 +1,10 @@
 package test;
 
-import java.nio.FloatBuffer;
-
-import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL30;
-import org.lwjgl.opengl.GL31;
 import org.lwjgl.util.vector.Vector3f;
 
 
-public class Cube implements Drawable {
+public class Cube extends DrawableBase {
 
 	//private FloatBuffer vertexBuffer;
 	//private ShortBuffer indexBuffer;
@@ -20,11 +13,11 @@ public class Cube implements Drawable {
 //	private final FloatBuffer colors;
 //	private final FloatBuffer normals;
 	
-	private final FloatBuffer attribs;
-	int vao;
-	int vbo;
-
-	private int triCount;
+//	private final FloatBuffer attribs;
+//	int vao;
+//	int vbo;
+//
+//	private int triCount;
 	/**
 	 * A shape with 8 corners at |r|,|r|,|r|.
 	 */
@@ -67,7 +60,7 @@ public class Cube implements Drawable {
 		
 		Vector3f[] faceNormals = new Vector3f[faces.length];
 		
-		triCount = 0;
+		int triCount = 0;
 		for (int i = 0; i < faces.length; i++) {
 			short[] f = faces[i];
 			faceNormals[i] = Util.normal(c[f[0]], c[f[1]], c[f[2]]);
@@ -105,11 +98,17 @@ public class Cube implements Drawable {
 			}
 		}
 		
+		init(GL11.GL_TRIANGLES,
+			Attribute.POSITION_3F, pos,
+			Attribute.NORMAL_3F, nrm,
+			Attribute.COLOR_4F, clr);
+		
 		// generate vertex data
 		
 		// bind vertex data to server side buffers
 		
 		// render vertex data
+		/*
 		
 		
 		attribs = BufferUtils.createFloatBuffer(pos.length*3*3 + nrm.length*3*3 + clr.length*3*4);
@@ -150,6 +149,7 @@ public class Cube implements Drawable {
 		GL20.glEnableVertexAttribArray(Attribute.COLOR_4F.ordinal());
 		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
 		GL30.glBindVertexArray(0);
+		*/
 		
 		/*
 		float[] f = new float[attribs.limit()];
@@ -269,6 +269,7 @@ public class Cube implements Drawable {
 //		};
 //	}
 
+	/*
 	@Override
 	public void destroy() {
 		GL30.glDeleteVertexArrays(vao);
@@ -288,6 +289,7 @@ public class Cube implements Drawable {
 		GL31.glDrawArraysInstanced(GL11.GL_TRIANGLES, 0, triCount*3, count);
 		//GL31.glDrawArraysInstanced(GL11.GL_TRIANGLES, 0, 1*3, count);
 	}
+	*/
 
 //	@Override
 //	public void draw() {

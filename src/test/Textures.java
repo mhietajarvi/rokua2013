@@ -1,25 +1,15 @@
 package test;
 
-import static org.lwjgl.opengl.GL11.GL_LINEAR;
-import static org.lwjgl.opengl.GL11.GL_RGB;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_MAG_FILTER;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_MIN_FILTER;
-import static org.lwjgl.opengl.GL11.GL_UNPACK_ALIGNMENT;
-import static org.lwjgl.opengl.GL11.GL_UNSIGNED_BYTE;
-import static org.lwjgl.opengl.GL11.glBindTexture;
-import static org.lwjgl.opengl.GL11.glGenTextures;
-import static org.lwjgl.opengl.GL11.glPixelStorei;
-import static org.lwjgl.opengl.GL11.glTexImage2D;
-import static org.lwjgl.opengl.GL11.glTexParameteri;
-import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
-import static org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP;
-import static org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_X;
-import static org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y;
-import static org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z;
-import static org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_X;
-import static org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Y;
-import static org.lwjgl.opengl.GL13.GL_TEXTURE_CUBE_MAP_POSITIVE_Z;
-import static org.lwjgl.opengl.GL13.glActiveTexture;
+import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL12.*;
+import static org.lwjgl.opengl.GL13.*;
+import static org.lwjgl.opengl.GL14.*;
+import static org.lwjgl.opengl.GL15.*;
+import static org.lwjgl.opengl.GL20.*;
+import static org.lwjgl.opengl.GL21.*;
+import static org.lwjgl.opengl.GL30.*;
+import static org.lwjgl.opengl.GL31.*;
+import static org.lwjgl.opengl.GL32.*;
 
 import java.awt.Graphics2D;
 import java.awt.color.ColorSpace;
@@ -36,17 +26,58 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.List;
+import java.util.Set;
 
 import javax.imageio.ImageIO;
 
 import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.EXTTextureFilterAnisotropic;
 
 public class Textures {
-
 	
-	//int envCubeTexture;
-	//int envCubeSampler = 0;
+//	private static final int[] TARGETS = {
+//			 GL_TEXTURE_1D, GL_TEXTURE_2D, GL_TEXTURE_3D,
+//			 GL_TEXTURE_1D_ARRAY, GL_TEXTURE_2D_ARRAY,
+//			 GL_TEXTURE_RECTANGLE,
+//			 GL_TEXTURE_CUBE_MAP,
+//			 GL_TEXTURE_BUFFER,
+//			 GL_TEXTURE_2D_MULTISAMPLE,
+//			 GL_TEXTURE_2D_MULTISAMPLE_ARRAY			
+//	};
+	
+	private static List<Set<Integer>> usedTargets = new ArrayList<>();
+	
+	public static int allocTexUnitForTarget(int target) {
+		
+		for (int i = 0; i < usedTargets.size(); i++) {
+			Set<Integer> used = usedTargets.get(i);
+			if (!used.contains(target)) {
+				used.add(target);
+				return GL_TEXTURE0 + i;
+			}
+		}
+		usedTargets.add(new HashSet<>(Arrays.asList(target)));
+		return GL_TEXTURE0 + usedTargets.size() - 1;
+	}
+	
+	public static void freeTexUnitTarget(int texUnit, int target) {
+		
+		int i = texUnit - GL_TEXTURE0;
+		if (i < 0 || i >= usedTargets.size()) {
+			throw new IllegalArgumentException("No targets allocated in texture unit "+i);
+		}
+		Set<Integer> used = usedTargets.get(i);
+		if (used.remove(target)) {
+			return;
+		}
+		throw new IllegalArgumentException("No target "+target+" allocated in texture unit "+i);
+	}
 
 	
 	private static final int[] cube_map_side = {
@@ -114,120 +145,91 @@ public class Textures {
     	}
     }
 
-	public static int loadCubeTexture(String directory, int textureUnit) throws IOException {
+	public static class Texture {
 
-		glActiveTexture(GL_TEXTURE0 + textureUnit); //envCubeSampler);
-    	
-    	int texture = glGenTextures();
-		glBindTexture(GL_TEXTURE_CUBE_MAP, texture);
-		int filter = GL_LINEAR;
-		//int filter = GL_NEAREST;
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, filter);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, filter);
-        
-		//Random r = new Random(234);
-		
-//		WTF? this works if side == 1, what is going on???
-		
-		int side = 1024; //256;
-//		int n = side*side*3;
-//		byte[] tmp = new byte[n];
-		
-		for (int i = 0; i < 6; i++) {
+		private final int unit;
+		private final int target;
+		private final int name;
+		private final int filter = GL_NEAREST; //GL_LINEAR;
 
-			
-//			ByteBuffer b = BufferUtils.createByteBuffer(n); //imageData.loadImage(new BufferedInputStream(is), false, null); // new int[]{}
-//			r.nextBytes(tmp);
-//			b.put(tmp);
-//			for (int j = 0; j < 4; j++) {
-//				b.put(new byte[]{ (byte)r.nextBytes(bytes);Radn55, (byte)55, (byte)255 });
-//			}
-//			b.flip();
-/*			
-	        glTexImage2D(cube_map_side[i], 0,
-            GL_RGB,
-            side,
-            side,
-            0, 
-            GL_RGB,
-            GL_UNSIGNED_BYTE,
-            new ImageGen(side, side).img1((i+1)*5000, (i+1)*50).buffer());
-*/			
-			
-			File file = Util.find(directory, cube_map_patt[i]);
-			if (file == null) {
-				throw new IllegalArgumentException("Could not find match for "+cube_map_patt[i]+" in "+directory);
-			}
-			InputStream is = new FileInputStream(file); //new File(directory, cube_map_file[i]));
-			
-//			ImageIOImageData imageData = new ImageIOImageData();
-//			BufferedImage bi = ImageIO.read(new BufferedInputStream(is));
-//			
-//			int w = bi.getWidth();
-//			int h = bi.getHeight();
-//	        WritableRaster raster;
-//	        BufferedImage texImage;
-//            raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,w,h,3,null);
-//            texImage = new BufferedImage(glColorModel,raster,false,new Hashtable());
-//            // copy the source image into the produced image
-//            Graphics2D g = (Graphics2D) texImage.getGraphics();
-//            
-////            if (flipped) {
-////            	g.scale(1,-1);
-////            	g.drawImage(image,0,-height,null);
-////            } else {
-//            	g.drawImage(bi,0,0,null);
-////            }
-//                byte[] data = ((DataBufferByte) texImage.getRaster().getDataBuffer()).getData(); 
-//                
-//                ByteBuffer imageBuffer = ByteBuffer.allocateDirect(data.length); 
-//                imageBuffer.order(ByteOrder.nativeOrder()); 
-//                imageBuffer.put(data, 0, data.length); 
-//                imageBuffer.flip();
-//                g.dispose();
-//                
-//	    	ByteBuffer textureBuffer = imageData.loadImage(new BufferedInputStream(is), false, null); // new int[]{}
-			LoadedImage img = new LoadedImage(is, cube_map_fx[i], cube_map_fy[i]);
-			//ByteBuffer textureBuffer = loadImage(is); // new int[]{}
-	    	
-	    	Log.d("tex: pos="+img.buffer.position()+", limit="+img.buffer.limit());
-//	    	Log.d("img: width="+imageData.getWidth()+", height="+imageData.getHeight());
-//	    	Log.d("img: twidth="+imageData.getTexWidth()+", theight="+imageData.getTexHeight());
-//	    	Log.d("img: depth="+imageData.getDepth());
-
-//	    	textureBuffer.put(gen);
-//	    	textureBuffer.rewind();
-//	    	
-//	    	//textureBuffer.pu
-//	    	for (int j = 0; j < 10; j++) {
-//	    		for (int k = 0; k < 3; k++) {
-//	    			Log.d("color: ("+textureBuffer.get()+","+textureBuffer.get()+","+textureBuffer.get()+")");
-//	    		}
-//	    	}
-//	    	
-//	    	textureBuffer.rewind();
-	    	
-	    	// GL33.glGenSamplers()
-	    	
-			glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-			
-	        glTexImage2D(cube_map_side[i], 0,
-	                GL_RGB,
-	                img.width,
-	                img.height,
-	                0, 
-	                GL_RGB,
-	                GL_UNSIGNED_BYTE,
-	                img.buffer);
+		public int getSampler() {
+			return unit - GL_TEXTURE0;
 		}
-        return texture;
+
+		public int getName() {
+			return name;
+		}
+		
+		public void delete() {
+			
+			glDeleteTextures(name);
+			freeTexUnitTarget(unit, target);
+		}
+
+		public Texture(int target) {
+
+			this.target = target;
+			unit = allocTexUnitForTarget(target);
+			glActiveTexture(unit);
+			name = glGenTextures();
+			glBindTexture(target, name);
+			glTexParameteri(target, GL_TEXTURE_MIN_FILTER, filter);
+			glTexParameteri(target, GL_TEXTURE_MAG_FILTER, filter);
+			
+			//glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &largest_supported_anisotropy);
+			//glTexParameterf(target, EXTTextureFilterAnisotropic.GL_TEXTURE_MAX_ANISOTROPY_EXT, 32);			
+			//glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			//glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		}
+	}		
+
+    public static class Texture2D extends Texture {
+
+		public Texture2D(String file) throws IOException {
+			super(GL_TEXTURE_2D);
+			LoadedImage img = new LoadedImage(new FileInputStream(file), false, false);
+			Log.d("TexImage2D: w=" + img.width + ", h=" + img.height + "");
+			// glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img.width, img.height, 0, GL_RGB, GL_UNSIGNED_BYTE, img.buffer);
+		}
+	}		
+		
+//		float pixels[] = {
+//			    0.5f, 0.5f, 0.5f,   1.0f, 1.0f, 1.0f,
+//			    1.0f, 1.0f, 1.0f,   0.5f, 0.5f, 0.5f
+//			};
+//		FloatBuffer fb = BufferUtils.createFloatBuffer(pixels.length);
+//		fb.put(pixels);
+//		fb.flip();
+		
+//		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 2, 2, 0, GL_RGB, GL_FLOAT, fb);
+			
+    
+    public static class TextureCubeMap extends Texture {
     	
-		
-		//TextureLoader.getTexture("JPG", in)
-		//BufferedImage img = ImageIO.read(new File(directory, "top.jpg"));
-		//Raster r = img.getData();
-		//glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, internalformat, width, height, border, format, type, pixels_buffer_offset);
-		
-	}
-	
+    	public TextureCubeMap(String directory) throws IOException {
+    		
+    		super(GL_TEXTURE_CUBE_MAP);
+
+    		for (int i = 0; i < 6; i++) {
+
+				File file = Util.find(directory, cube_map_patt[i]);
+				if (file == null) {
+					throw new IllegalArgumentException("Could not find match for "+cube_map_patt[i]+" in "+directory);
+				}
+				InputStream is = new FileInputStream(file);
+				LoadedImage img = new LoadedImage(is, cube_map_fx[i], cube_map_fy[i]);
+				Log.d("tex: pos="+img.buffer.position()+", limit="+img.buffer.limit());
+				glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+		        glTexImage2D(cube_map_side[i], 0,
+		                GL_RGB,
+		                img.width,
+		                img.height,
+		                0, 
+		                GL_RGB,
+		                GL_UNSIGNED_BYTE,
+		                img.buffer);
+    		}
+    	}
+    }
 }
