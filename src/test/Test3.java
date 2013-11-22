@@ -133,10 +133,11 @@ public class Test3 {
 		new Test3().run();
 	}
 
-	int N = 1;
+	int N = 3;
 	
-	Deque<Obj> reserve = new ArrayDeque<>(N);
-	Deque<Obj> fallingBlocks = new ArrayDeque<>(N);
+	//Deque<Obj> reserve = new ArrayDeque<>(N);
+	//Deque<Obj> fallingBlocks = new ArrayDeque<>(N);
+	ArrayList<Obj> objects = new ArrayList<>();
 
 	// final Func.M4 farAway = new Simple.Position(0, new Vector3f(10000, 0, 0));
 
@@ -287,7 +288,7 @@ public class Test3 {
         
         // GLU.gluLookAt(eyex, eyey, eyez, centerx, cente§ry, centerz, upx, upy, upz);
         Cube cube = new Cube(0.5f);
-        Sphere sphere = new Sphere(1, 6);
+        Sphere sphere = new Sphere(1, 4);
         Quad quad1 = new Quad(1);
         
         // TODO: specify background rect in projected space to 
@@ -298,6 +299,8 @@ public class Test3 {
 		
 		
 		View camera = new View();
+		camera.translateView(0, 0, 2);
+		
         Lights lights = new Lights();
 		//view.translateView(40, 30, -50);
 		
@@ -360,10 +363,12 @@ public class Test3 {
 		
         for (int i = 0; i < N; i++) {
         	Obj obj = om.new Obj(glass, sphere); //fbTransition(om.new Obj(glass, cube, farAway()));
-        	reserve.add(obj);
+        	objects.add(obj);
         	// objects in reserve will become fallingblocks after a while
         }
+        Obj selected = null;
         	
+    	Obj lightMarker = om.new Obj(glass, sphere); //fbTransition(om.new Obj(glass, cube, farAway()));
 		
         /*
         	//Position p = new Position((rnd.nextFloat() - 0.5f)*20, (rnd.nextFloat() - 0.5f)*30, (rnd.nextFloat() - 0.5f)*20);
@@ -429,7 +434,7 @@ public class Test3 {
     	
     	Buffers buffers = new Buffers(N + 10);
 
-		FrameBuffer frameBuffer = new FrameBuffer(300, 300);
+		FrameBuffer frameBuffer = new FrameBuffer(4*512, 4*512);
 
 		Obj q1 = om.new Obj(std, quad1);
 		q1.setTransform(new Vector3f(2,0,0), true, 0);
@@ -439,6 +444,7 @@ public class Test3 {
 //    	      could also apply some functions to the target point (like y = base + sin(C*t*x))
     	List<Binder> binders = new ArrayList<>();
     	
+    	Vector3f tmp = new Vector3f();
     	float scale = 0.005f;
 		while (!Display.isCloseRequested()) {
 
@@ -459,20 +465,46 @@ public class Test3 {
 				}
 			}
 			float step = 0.3f;
+			
 			//if (Keyboard.isKeyDown(Keyboard.KEY))
 			if (!Keyboard.isKeyDown(Keyboard.KEY_RSHIFT) && !Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)) {
+				
 				if (Keyboard.isKeyDown(Keyboard.KEY_A)) {
-					camera.translateView(step, 0, 0);
-				}
-				if (Keyboard.isKeyDown(Keyboard.KEY_D)) {
 					camera.translateView(-step, 0, 0);
 				}
-				if (Keyboard.isKeyDown(Keyboard.KEY_W)) {
-					camera.translateView(0,  0, step);
+				if (Keyboard.isKeyDown(Keyboard.KEY_D)) {
+					camera.translateView(step, 0, 0);
 				}
-				if (Keyboard.isKeyDown(Keyboard.KEY_S)) {
+				if (Keyboard.isKeyDown(Keyboard.KEY_W)) {
 					camera.translateView(0,  0, -step);
 				}
+				if (Keyboard.isKeyDown(Keyboard.KEY_S)) {
+					camera.translateView(0,  0, step);
+				}
+				if (selected != null) {
+					selected.getWorldPosition(tmp);
+					if (Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
+						tmp.x -= 0.1;
+					}
+					if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT)) {
+						tmp.x += 0.1;
+					}
+					if (Keyboard.isKeyDown(Keyboard.KEY_UP)) {
+						tmp.z -= 0.1;
+					}
+					if (Keyboard.isKeyDown(Keyboard.KEY_DOWN)) {
+						tmp.z += 0.1;
+					}
+					if (Keyboard.isKeyDown(Keyboard.KEY_DELETE)) {
+						tmp.y -= 0.1;
+					}
+					if (Keyboard.isKeyDown(Keyboard.KEY_INSERT)) {
+						tmp.y += 0.1;
+					}
+					selected.setTransform(tmp, true, 0);
+				}
+				
+				
 				if (Keyboard.isKeyDown(Keyboard.KEY_Z)) {
 					for (Binder b : binders) {
 						b.getParent().getWorldTransform().rotate(0.4f, new Vector3f(0, 1, 0));
@@ -491,6 +523,23 @@ public class Test3 {
 				final char ch = Keyboard.getEventCharacter();
 				boolean down = Keyboard.getEventKeyState();
 				Log.d("event char: "+ch+(down ? "DOWN" : "UP"));
+				
+				if (Character.isDigit(ch) && down) {
+					int i = Integer.parseInt(""+ch);
+					if (i >= 0 && i < objects.size()) {
+						selected = objects.get(i);
+						System.out.println("selected = "+selected);
+					} else {
+						selected = null;
+						System.out.println("selected = "+selected);
+					}
+				} else {
+					
+				}
+				
+				
+				
+				/*
 				if (!down || !(Character.isUpperCase(ch) || Character.isSpace(ch))) {
 					continue;
 				}
@@ -505,29 +554,9 @@ public class Test3 {
 				Binder b = createChar(ch, reserve);
 				binders.add(b);
 				controllers.add(b);
-				
 				rnd(p0, 10);
 				b.getParent().setTransform(p0, true, 1); // TODO: proper control for parent (how to move character)
-				
-				// who will step controller?
-				// who will control parent object
-				
-				/*
-				someObj.add(new Event() {
-					@Override
-					public boolean update(double _t, long time_ns) {
-						if (_t >= t0) {
-							createChar(_t, time_ns, ch);
-							return true;
-						}
-						return false;
-					}
-				});
 				*/
-				
-				
-				// place composite in scene
-				// detach some objects and put them into composite
 			}
 			
 			
@@ -538,34 +567,58 @@ public class Test3 {
 			om.prepareBuffers(buffers);
 			
 	// move lights (TODO: these should be controlled just like geometry) 
-			lights.setWorldLight(1, (float)(2*Math.sin(frame*0.01f)), -1);
+			lights.setWorldLight((float)(10*Math.sin(frame*0.01f)), 10, (float)(10*Math.cos(frame*0.01f)));
+			//lights.setWorldLight(-40, 0, 0);
 
+			
+			lightMarker.setTransform(lights.point_light_1, true, 0);
 			std.bind(Uniform.U_TEXTURE_1, imgTexture);
+			
 
+
+			
+	// to use shadow map, shader needs:
+	// the shadow map depth texture, naturally
+	// transformation from world coordinates to depth texture (x,y,depth) for lookups
+			
 		// render shadow map
 			// TODO: set lightview to match some light position and direction
 			frameBuffer.selectAsRenderTarget();
-			lightView.setProjection(60, 0.1f, 1000f, frameBuffer.w, frameBuffer.h);
-			lightView.translateView(0, 0, -0.01f);
+			lightView.look(lights.point_light_1, new Vector3f(0,0,0));
+			lightView.setProjection(60, 2f, 40f, frameBuffer.w, frameBuffer.h);
+			//lightView.translateView(0, 0, -0.01f);
+
+			glDepthRange(0, 1);
 			glViewport(0, 0, frameBuffer.w, frameBuffer.h);
 
 			glClearColor(255/255.0f, 105/255.0f, 180/255.0f, 1.0f);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			
 			glEnable(GL_DEPTH_TEST);
+			
+			glass.bind(Uniform.U_SHADOW_MAP_1, frameBuffer.depth);
+			glass.bind(Uniform.U_WORLD_TO_SHADOW_M4, lightView.world_to_projected);
+			
 			//glDisable(GL_DEPTH_TEST);
 			// TODO: we probably want to use cheapest possible shaders for shadow map generation...
 			buffers.draw(lightView, null, t);
 			// what to do with frameBuffer?
 			// to test, render a quad that uses the resulting texture
+			//lightView.projection
+			//lightView.world_to_view
 			
-	        
-			camera.setProjection(60, 0.1f, 1000f, Display.getWidth(), Display.getHeight());
+			//glass.bind(Uniform.U_SHADOW_MAP_1, frameBuffer.depth);
+			//glass.bind(Uniform.U_WORLD_TO_SHADOW_M4, lightView.world_to_projected);
+
+			
+			camera.setProjection(50, 0.1f, 100f, Display.getWidth(), Display.getHeight());
 			glViewport(0, 0, Display.getWidth(), Display.getHeight());
 			FrameBuffer.setDefaultRenderTarget();
 
 
-			std.bind(Uniform.U_TEXTURE_1, frameBuffer.texture);
+			//std.bind(Uniform.U_TEXTURE_1, frameBuffer.color);
+			//std.bind(Uniform.U_SHADOW_MAP_1, frameBuffer.depth);
+			std.bind(Uniform.U_TEXTURE_1, frameBuffer.depth);
 			
 			// manually updating view for every program... refactor when there are more programs
 			//glass.useView(view);

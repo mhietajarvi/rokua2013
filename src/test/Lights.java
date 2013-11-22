@@ -1,10 +1,10 @@
 package test;
 
-import org.lwjgl.util.vector.Vector4f;
+import org.lwjgl.util.vector.Vector3f;
 
 public class Lights {
 	// point light in world space
-	public final Vector4f point_light_1 = new Vector4f(); 
+	public final Vector3f point_light_1 = new Vector3f(); 
 	void setWorldLight(float x, float y, float z) {
 
 		// directly set a point light in view coordinates

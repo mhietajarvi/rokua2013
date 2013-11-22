@@ -24,7 +24,8 @@ public class FrameBuffer {
 
 	final int w,h;
 	final int frameBuffer;
-	final Texture texture;
+	final Texture color;
+	final Texture depth;
 
 	public static void setDefaultRenderTarget() {
 		
@@ -62,8 +63,16 @@ public class FrameBuffer {
 		glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
 		
 		// The texture we're going to render to
-		texture = new Texture(GL_TEXTURE_2D);
-		 
+		color = new Texture(GL_TEXTURE_2D);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+
+		depth = new Texture(GL_TEXTURE_2D);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, w, h, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+		
+		
 //		int pixelBuffer = glGenBuffers();
 //		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pixelBuffer);
 //		glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
@@ -81,20 +90,21 @@ public class FrameBuffer {
 //		}
 //		buf.flip();
 		
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
 		 
 		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);		
 		
 		// The depth buffer
-		int depthBuffer = glGenRenderbuffers();
-		glBindRenderbuffer(GL_RENDERBUFFER, depthBuffer);
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, w, h);
-		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuffer);
+//		int depthBuffer = glGenRenderbuffers();
+//		glBindRenderbuffer(GL_RENDERBUFFER, depthBuffer);
+//		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, w, h);
+//		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuffer);
 		
 		// Set "renderedTexture" as our colour attachement #0
-		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, texture.getName(), 0);
-		 
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, color.getName(), 0);
+
+		glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depth.getName(), 0);
+		
 		// Set the list of draw buffers.
 		glDrawBuffers(GL_COLOR_ATTACHMENT0); // "1" is the size of DrawBuffers
 		

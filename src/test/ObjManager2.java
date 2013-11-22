@@ -270,7 +270,7 @@ public class ObjManager2 {
 					//Log.d("transforms : "+transforms);
 					transforms.limit(new_limit);
 					
-					e.program.setUniform(Uniform.U_MODEL_TO_WORLD_M4, transforms);
+					e.program.bind(Uniform.U_MODEL_TO_WORLD_M4, transforms);
 					transforms.position(transforms.limit());
 					e.drawable.drawInstanced(batch_size);
 					instancesRemaining -= batch_size;

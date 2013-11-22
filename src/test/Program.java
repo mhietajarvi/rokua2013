@@ -69,7 +69,10 @@ public class Program {
 		// 
 		U_ENV_CUBE,
 		U_TEXTURE_1,
-		U_TEXTURE_2
+		U_TEXTURE_2,
+		
+		U_SHADOW_MAP_1,
+		U_WORLD_TO_SHADOW_M4,
 	}
 
 //	public static enum Attribute {
@@ -189,9 +192,7 @@ public class Program {
 	}
 	
 	View view;
-	Matrix4f model_to_view = new Matrix4f();
-	Matrix4f model_to_projected = new Matrix4f();
-	Matrix4f world_to_projected = new Matrix4f();
+//	Matrix4f world_to_projected = new Matrix4f();
 
 	public void useLights(Lights lights) {
 		
@@ -208,17 +209,17 @@ public class Program {
 	public void useView(View view) {
 		
 		this.view = view;
-		Matrix4f.mul(view.projection, view.world_to_view, world_to_projected);
+		//Matrix4f.mul(view.projection, view.world_to_view, world_to_projected);
 		
 		useProgram();
 
-		setUniform(Uniform.U_WORLD_TO_PROJECTED_M4, 1, world_to_projected);
+		bind(Uniform.U_WORLD_TO_PROJECTED_M4, view.world_to_projected);
 		
 		// TODO: lights need to be handled properly (e.g. )
         // map current lights to uniforms provided by shader program
         
         //glUniform1i(getIndex(Uniform.U_ENV_CUBE), view.envCubeSampler);
-		setUniform(Uniform.U_EYE_WORLD_POS_3F, view.view_to_world.m30, view.view_to_world.m31, view.view_to_world.m32);
+		bind(Uniform.U_EYE_WORLD_POS_3F, view.view_to_world.m30, view.view_to_world.m31, view.view_to_world.m32);
 		
 	}
 	
@@ -243,7 +244,7 @@ public class Program {
 		}
 	}
 	
-	public void setUniform(Uniform u, FloatBuffer buf) {
+	public void bind(Uniform u, FloatBuffer buf) {
 		
 		int index = getIndex(u);
 		if (index != -1) {
@@ -252,13 +253,15 @@ public class Program {
 		}
 	}
 	
-	public void setUniform(Uniform u, int count, Matrix4f... matrices) {
+	public void bind(Uniform u, Matrix4f... matrices) {
 		
 		int index = getIndex(u);
 		if (index != -1) {
 	    	buf.clear();
-	    	for (int i = 0; i < count; i++) {
-	    		matrices[i].store(buf);
+	    	for (Matrix4f matrix : matrices) {
+	    	//for (int i = 0; i < count; i++) {
+	    		matrix.store(buf);
+	    		//matrices[i].store(buf);
 	    	}
 	    	buf.flip();
 			useProgram();
@@ -266,7 +269,7 @@ public class Program {
 		}
 	}
 
-	public void setUniform(Uniform u, float v0, float v1, float v2) {
+	public void bind(Uniform u, float v0, float v1, float v2) {
 		
 		int index = getIndex(u);
 		if (index != -1) {
@@ -284,7 +287,23 @@ public class Program {
 		}
 	}
 	
+	// temp, only for method below
+	Matrix4f model_to_view = new Matrix4f();
+	Matrix4f model_to_projected = new Matrix4f();
 
+	// hmm... now all shaders support these uniforms?
+	public void useModelTransform(Matrix4f model_to_world) {
+
+		useProgram();
+		
+		Matrix4f.mul(view.world_to_view, model_to_world, model_to_view);
+		Matrix4f.mul(view.projection, model_to_view, model_to_projected);
+		
+		bind(Uniform.U_MODEL_TO_WORLD_M4, model_to_world);
+		bind(Uniform.U_MODEL_TO_VIEW_M4, model_to_view);
+		bind(Uniform.U_MODEL_TO_PROJECTED_M4, model_to_projected);
+	}
+	
 //	public void useModelTransforms(Matrix4f[] model_to_world, int count) {
 //
 //		useProgram();
@@ -293,17 +312,6 @@ public class Program {
 //		setUniform(Uniform.U_WORLD_TO_PROJECTED_M4, 1, world_to_projected);
 //	}
 	
-	public void useModelTransform(Matrix4f model_to_world) {
-
-		useProgram();
-		
-		Matrix4f.mul(view.world_to_view, model_to_world, model_to_view);
-		Matrix4f.mul(view.projection, model_to_view, model_to_projected);
-		
-		setUniform(Uniform.U_MODEL_TO_WORLD_M4, 1, model_to_world);
-		setUniform(Uniform.U_MODEL_TO_VIEW_M4, 1, model_to_view);
-		setUniform(Uniform.U_MODEL_TO_PROJECTED_M4, 1, model_to_projected);
-	}
 	
 //	public void useWith(View view, Matrix4f model_to_world) {
 //		

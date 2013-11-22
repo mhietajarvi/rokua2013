@@ -14,7 +14,7 @@
 
 uniform mat4 U_MODEL_TO_WORLD_M4[250];
 uniform mat4 U_WORLD_TO_PROJECTED_M4;
-//uniform float U_COLOR_MULT_F[100];
+uniform mat4 U_WORLD_TO_SHADOW_M4;
 
 uniform float U_TIME_F;
 
@@ -28,6 +28,7 @@ in vec4 COLOR_4F;            // Per-vertex color information we will pass in.
 out Fragment {
 	vec3 world_pos;
 	vec3 world_nrm;
+	vec4 shadow_pos;
 	flat vec4 color;
 };
 
@@ -95,11 +96,9 @@ vec3 angles(vec3 v) {
 
 float disp(vec3 v) {
 	vec3 a = angles(v);
-
-	//return 0.7 + 0.2*cos(U_TIME_F + 3*v.x) + 0.2*sin(U_TIME_F + 3*v.y) + 0.2*sin(U_TIME_F + 3*v.z);
-	//return 0.7 + 0.2*cos(U_TIME_F + 3*a.x) + 0.2*sin(U_TIME_F + 3*a.y) + 0.2*sin(U_TIME_F + 3*a.z);
 	return 1.21 + 0.4*sin(0.8*U_TIME_F + 4*a.y) + 0.4*cos(2 + 0.7*U_TIME_F + 4*a.x) - 0.4*sin(1 + 0.9*U_TIME_F + 4*a.z);
-	//return 0.6 + 0.4*sin(U_TIME_F + a.y + a.x + a.z);
+	
+	//return 1;
 }
 
 // The entry point for our vertex shader.
@@ -148,6 +147,9 @@ void main() {
 	
 	vec4 wp = U_MODEL_TO_WORLD_M4[gl_InstanceID] * vec4(POSITION_3F * (disp(POSITION_3F)), 1);
 	world_pos = vec3(wp);
+
+	shadow_pos = (U_WORLD_TO_SHADOW_M4 * wp); // * vec4(0.5, 0.5, 0.5, 1) + vec4(0.5, 0.5, 0.5, 0);
+
 	world_nrm = mat3x3(U_MODEL_TO_WORLD_M4[gl_InstanceID]) * model_nrm;
 	color = COLOR_4F;
 	gl_Position = U_WORLD_TO_PROJECTED_M4 * wp;

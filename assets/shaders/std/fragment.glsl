@@ -6,7 +6,7 @@ uniform vec3 U_POINT_LIGHT_1_3F;
 uniform vec3 U_EYE_WORLD_POS_3F;
 uniform samplerCube U_ENV_CUBE;
 uniform sampler2D U_TEXTURE_1;
-uniform sampler2D U_TEXTURE_2;
+uniform sampler2DShadow U_SHADOW_MAP_1;
 
 in Fragment {
 	vec3 world_pos;
@@ -31,18 +31,14 @@ void main() {
 	// pointing in the same direction then it will get max illumination.
 	//float diffuse = max(dot(world_nrm, to_light_n), 0.0);
 	
-//	vec3 c1 = texture(U_ENV_CUBE, tex_coord).rgb;
-	vec3 t1 = texture(U_TEXTURE_1, tex_coord.xy ).rgb;
-//	if (t1.x > 0) {
-		out_color = t1;
-//	} else {
-//		out_color = c1;
-//	}
+	//vec3 t1 = texture(U_TEXTURE_1, tex_coord.xy ).rgb;
+	
+	//out_color = vec3(texture(U_SHADOW_MAP_1, tex_coord), 1.0, 0);
+	//out_color = vec3(texture(U_SHADOW_MAP_1, tex_coord), 0, 0);
+	out_color = texture(U_TEXTURE_1, tex_coord.xy ).rgb;
 	
 	
 	//out_color = texture( U_TEXTURE_1, tex_coord.xy ).rgb;
-	
-
 	//out_color = texture( U_TEXTURE, vec2(world_pos.y, world_pos.y)).rgb;
 	//out_color = vec3(world_pos.y, world_pos.y, world_pos.y);
 
