@@ -34,7 +34,7 @@ public class Util {
 	}
 	
 	
-	static File find(String dir, final String filePattern) {
+	public static File find(String dir, final String filePattern) {
 	
 		File[] files = new File(dir).listFiles(new FilenameFilter() {
 			@Override

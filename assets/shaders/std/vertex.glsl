@@ -17,6 +17,30 @@ out Fragment {
 	vec4 color;
 };
 
+// standard shader with:
+// - N point lights
+// - N color textures
+// - bump map
+// - 
+// - shadow map lookup?
+// - global illumination?
+//   (hardly standard?)
+// - ssao?
+
+// occlusion culling, both for:
+// - selecting what is seen by camera
+// - selecting what objects may cast shadows that are seen by camera (for each light source)
+
+// Light Space Perspective Shadow Maps?
+
+// deep shadows maps as the standard shadow mechanism?
+// (only use something else if performance requires)
+
+// interesting mechanism:
+//  Dynamic Shadow Volume Generation with Geometry Shaders
+//  (also, soft shadows with shadow volumes?)
+
+
 void main() {
 	vec4 wp = U_MODEL_TO_WORLD_M4[gl_InstanceID] * vec4(POSITION_3F, 1);
 	world_pos = vec3(wp);

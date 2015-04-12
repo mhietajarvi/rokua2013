@@ -12,7 +12,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.lwjgl.BufferUtils;
-import org.lwjgl.MemoryUtil;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL15;

@@ -11,13 +11,18 @@ import static org.lwjgl.opengl.GL30.*;
 import static org.lwjgl.opengl.GL31.*;
 import static org.lwjgl.opengl.GL32.*;
 
+import org.lwjgl.opengl.GL43;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.function.Function;
+import java.util.function.IntFunction;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.util.vector.Matrix4f;
@@ -106,7 +111,59 @@ public class Program {
 
 		this(Util.find(dir, "vertex.*"), Util.find(dir, "geometry.*"), Util.find(dir, "fragment.*"));
 	}
+
+	public static final int[] resTypes = new int[] {
+		GL43.GL_UNIFORM,
+		GL43.GL_UNIFORM_BLOCK,
+		GL43.GL_PROGRAM_INPUT,
+		GL43.GL_PROGRAM_OUTPUT,
+		GL43.GL_BUFFER_VARIABLE,
+		GL43.GL_SHADER_STORAGE_BLOCK,
+		GL43.GL_VERTEX_SUBROUTINE,
+		GL43.GL_TESS_CONTROL_SUBROUTINE,
+		GL43.GL_TESS_EVALUATION_SUBROUTINE,
+		GL43.GL_GEOMETRY_SUBROUTINE,
+		GL43.GL_FRAGMENT_SUBROUTINE,
+		GL43.GL_COMPUTE_SUBROUTINE,
+		GL43.GL_VERTEX_SUBROUTINE_UNIFORM,
+		GL43.GL_TESS_CONTROL_SUBROUTINE_UNIFORM,
+		GL43.GL_TESS_EVALUATION_SUBROUTINE_UNIFORM,
+		GL43.GL_GEOMETRY_SUBROUTINE_UNIFORM,
+		GL43.GL_FRAGMENT_SUBROUTINE_UNIFORM,
+		GL43.GL_COMPUTE_SUBROUTINE_UNIFORM,
+		GL43.GL_TRANSFORM_FEEDBACK_VARYING
+	};
 	
+	
+	public String resTypeName(int resType) {
+		switch (resType) {
+		case GL43.GL_UNIFORM : return "GL_UNIFORM";
+		case GL43.GL_UNIFORM_BLOCK : return "GL_UNIFORM_BLOCK";
+		case GL43.GL_PROGRAM_INPUT : return "GL_PROGRAM_INPUT";
+		case GL43.GL_PROGRAM_OUTPUT : return "GL_PROGRAM_OUTPUT";
+		case GL43.GL_BUFFER_VARIABLE : return "GL_BUFFER_VARIABLE";
+		case GL43.GL_SHADER_STORAGE_BLOCK : return "GL_SHADER_STORAGE_BLOCK";
+		case GL43.GL_VERTEX_SUBROUTINE : return "GL_VERTEX_SUBROUTINE";
+		case GL43.GL_TESS_CONTROL_SUBROUTINE : return "GL_TESS_CONTROL_SUBROUTINE";
+		case GL43.GL_TESS_EVALUATION_SUBROUTINE : return "GL_TESS_EVALUATION_SUBROUTINE";
+		case GL43.GL_GEOMETRY_SUBROUTINE : return "GL_GEOMETRY_SUBROUTINE";
+		case GL43.GL_FRAGMENT_SUBROUTINE : return "GL_FRAGMENT_SUBROUTINE";
+		case GL43.GL_COMPUTE_SUBROUTINE : return "GL_COMPUTE_SUBROUTINE";
+		case GL43.GL_VERTEX_SUBROUTINE_UNIFORM : return "GL_VERTEX_SUBROUTINE_UNIFORM";
+		case GL43.GL_TESS_CONTROL_SUBROUTINE_UNIFORM : return "GL_TESS_CONTROL_SUBROUTINE_UNIFORM";
+		case GL43.GL_TESS_EVALUATION_SUBROUTINE_UNIFORM : return "GL_TESS_EVALUATION_SUBROUTINE_UNIFORM";
+		case GL43.GL_GEOMETRY_SUBROUTINE_UNIFORM : return "GL_GEOMETRY_SUBROUTINE_UNIFORM";
+		case GL43.GL_FRAGMENT_SUBROUTINE_UNIFORM : return "GL_FRAGMENT_SUBROUTINE_UNIFORM";
+		case GL43.GL_COMPUTE_SUBROUTINE_UNIFORM : return "GL_COMPUTE_SUBROUTINE_UNIFORM";
+		case GL43.GL_TRANSFORM_FEEDBACK_VARYING : return "GL_TRANSFORM_FEEDBACK_VARYING";
+		}
+		return "UNKNOWN("+resType+")";
+	}
+	
+	//for arrays
+	public static <T, U> U[] convertArray(T[] from, Function<T, U> func, IntFunction<U[]> generator){
+	    return Arrays.stream(from).map(func).toArray(generator);
+	}	
 	public Program(File vertexShaderFile, File geometryShaderFile, File fragmentShaderFile) throws IOException {
 		
 		Arrays.fill(uIndices, -1);
@@ -138,6 +195,27 @@ public class Program {
 		
 		Log.d("Linked shaders %s and %s to program %s", vertexShader, fragmentShader, program);
 
+		// find all uniforms in the program
+		// track that all uniforms are bound before execution?
+
+		for (int resType : resTypes) {
+
+			final int numActive = GL43.glGetProgramInterfacei(program, resType, GL43.GL_ACTIVE_RESOURCES);
+			for (int i = 0; i < numActive; i++) {
+				String name = GL43.glGetProgramResourceName(program, resType, i, 100);
+				// IntBuffer props = BufferUtils.createIntBuffer(1);
+				// props.put(GL43.GL_NAME_LENGTH);
+				// GL43.glGetProgramResource(program, GL43.GL_UNIFORM, i, props,
+				// null, params);
+				Log.d(" " + resTypeName(resType) + "[" + i + "] : '" + name + "'");
+			}
+		}
+		
+		IntBuffer indices = BufferUtils.createIntBuffer(Uniform.values().length);
+		
+		glGetUniformIndices(program, Arrays.stream(Uniform.values()).map((Enum<?> e) -> e.name()).toArray(String[]::new), indices);
+		
+		// IntBuffer
 		StringBuilder sb = new StringBuilder();
 		for (Uniform u : Uniform.values()) {
 			int index = glGetUniformLocation(program, u.name());

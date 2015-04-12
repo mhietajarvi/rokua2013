@@ -36,83 +36,18 @@ import test.Textures.Texture2D;
 import test.Textures.TextureCubeMap;
 
 
-/*
- * ideas:
- * 
- *  text scroller, where each letter is composed of random arrangement of solids
- *  and solids behave a bit like asteroids
- *  
- *  (solids turn transparent dynamically, possible?)
- * 
- *  required for that:
- *  - better drawable/transformation management system
- *  - repurpose used solids for new letters on the fly
- *  - 
- * 
- * 
- *  transparent objects
- *  
- *  - how transparency work in the first place
- *  - rendering order must be managed manually
- * 
- *  (real glass ball)
- * 
- *  - advanced:
- *    - render back side of transparent object, store z and surface normal for each fragment
- *    - render front face
- *      - shoot ray to back side buffer, bounce from back side and sample back z/color (or env cube map) with refracted ray 
- *      - calculate reflected ray, sample env map with it
- *     
- *    (so env map reflection is standard stuff, novel thing is storing the back side geometry and calculating refracted rays) 
- *     - 
- *    (look up texel in cube map with direction)
- *     
- *  calculate , lookup to z/color buffers framebuffer
- * 
- */
 
-public class Test3 {
+public class Test2d {
 	
 	static {
 		System.setProperty("org.lwjgl.util.NoChecks", "true");
 	}
 	
-	
-	Test3() throws Exception {
+	Test2d() throws Exception {
 		
 	}
 
 	
-	/*
-	public static void loadCubeTexture(String directory) throws IOException {
-
-		InputStream is = new FileInputStream(new File(directory, "top.jpg"));
-		ImageIOImageData imageData = new ImageIOImageData();
-    	ByteBuffer textureBuffer = imageData.loadImage(new BufferedInputStream(is), false, null); // new int[]{}
-		
-		int texture = glGenTextures();
-		glBindTexture(GL_TEXTURE_CUBE_MAP, texture);
-		
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0,
-                GL_RGBA8,
-                imageData.getWidth(),
-                imageData.getHeight(),
-                0, 
-                imageData.getDepth() == 32 ? GL_RGBA : GL_RGB,
-                GL_UNSIGNED_BYTE,
-                textureBuffer);
-        
-        // glTex
-    	
-		
-		//TextureLoader.getTexture("JPG", in)
-		
-		//BufferedImage img = ImageIO.read(new File(directory, "top.jpg"));
-		//Raster r = img.getData();
-		// r.
-		//glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, internalformat, width, height, border, format, type, pixels_buffer_offset);
-		
-	}*/
 	static Random rnd = new Random(2434);
 	
 	Vector3f v = new Vector3f();
@@ -130,7 +65,7 @@ public class Test3 {
 	}
 	
 	public static void main(String[] args) throws Exception {
-		new Test3().run();
+		new Test2d().run();
 	}
 
 	int N = 3;
@@ -162,45 +97,6 @@ public class Test3 {
 	double nextCharMinTime = 0;
 	double charInterval = 1.3;
 
-/*	
-	Object fbTransition(final Object obj) {
-		final double t0 = (nextFb++)*fbInterval;
-		final double t1 = t0 + 20;
-		Interpolator ip = new SmoothVelocity(t0 - 0.5, t0 + 0.1);
-		obj.set(Uniform.U_COLOR_MULT_F, ip.interpolate(1, 20, 1, 0));
-		obj.add(new Event() {
-			//double t0 = (nextFb++)*fbInterval;
-    		public boolean update(double t, long time_ns) {
-    			if (t >= t0) {
-    				// start from current position
-    				Vector3f p = obj.getPosition(time_ns); //new Vector3f(10 - rnd.nextFloat()*6, 5, -rnd.nextFloat()*6);
-					obj.set(new Simple.Position(t, p, new Vector3f(0, -30, 0), new Vector3f(0, 0, 0)));
-					fallingBlocks.add(obj);
-					
-					obj.add(new Event() {
-						@Override
-						public boolean update(double t, long time_ns) {
-							if (t >= t1) {
-								// remove falling block
-								obj.set(farAway());
-								fallingBlocks.remove(obj);
-								fbTransition(obj);
-								return true;
-							}
-							return false;
-						}
-					});
-					
-    				return true;
-    			}
-    			return false;
-    		}
-    	});
-		
-		
-    	return obj;
-    }
-*/
 	
     Vector3f p0 = new Vector3f();
     Vector3f v0 = new Vector3f();
@@ -210,74 +106,80 @@ public class Test3 {
     ObjManager2 om = new ObjManager2();
     
 	//Interpolator ip = new SmoothVelocity(0, 10);
-
 	//Obj someObj = om.new Obj(null);
-
-	PointCloudFont font = new PointCloudFont("Monaco", 20, 1.2f, 1.2f, 1.2f, 1);
-	
-	Binder.Mover pull = new Binder.Mover() {
-		
-		Vector3f r = new Vector3f();
-		float mult = 20.0f;
-		@Override
-		public void move(Vector3f p, Vector3f v, Vector3f target, float dt, Vector3f result) {
-
-			Vector3f.sub(target, p, r);
-
-			//r.scale(0.05f);
-			
-			float r2 = (float)Math.sqrt(r.length());
-			r2 = Math.max(r2, 0.1f);
-			v.scale(0.97f);
-			r.scale(dt*mult/r2); // would need to divide by sqrt(r2) to make ~ actual gravitational pull
-			Vector3f.add(v, r, r);
-			r.scale(dt);
-			
-			Vector3f.add(p, r, result);
-		}
-	};
 
     List<Controller> controllers = new ArrayList<>();
 	
 	// this creates new parent object for the char
 	// and binds subobjects to it
-	
-	Binder createChar(char ch, Deque<Obj> source) {
-		
-		Binder binder = new Binder(om.new Obj(), font.getGlyph(ch), pull);
-		while (!source.isEmpty() && !binder.isFull()) {
-			binder.bind(source.remove());
+    
+
+	private static Vector3f tmpVec3f = new Vector3f();
+    
+    public static void move(View camera, Obj selected) {
+
+    	float scale = 0.005f;
+    	
+		int dx = Mouse.getDX();
+		int dy = Mouse.getDY();
+		if (dx != 0 || dy != 0) {
+			if (Mouse.isButtonDown(0)) {
+				camera.rotateView(dx*scale, dy*scale);
+			} else if (Mouse.isButtonDown(1)) {
+				camera.translateView(dx*scale, dy*scale, 0);
+			}
 		}
-		return binder;
-	}
+		float step = 0.3f;
+		
+		if (!Keyboard.isKeyDown(Keyboard.KEY_RSHIFT) && !Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)) {
+			
+			if (Keyboard.isKeyDown(Keyboard.KEY_A)) {
+				camera.translateView(-step, 0, 0);
+			}
+			if (Keyboard.isKeyDown(Keyboard.KEY_D)) {
+				camera.translateView(step, 0, 0);
+			}
+			if (Keyboard.isKeyDown(Keyboard.KEY_W)) {
+				camera.translateView(0,  0, -step);
+			}
+			if (Keyboard.isKeyDown(Keyboard.KEY_S)) {
+				camera.translateView(0,  0, step);
+			}
+			if (selected != null) {
+				selected.getWorldPosition(tmpVec3f);
+				if (Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
+					tmpVec3f.x -= 0.1;
+				}
+				if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT)) {
+					tmpVec3f.x += 0.1;
+				}
+				if (Keyboard.isKeyDown(Keyboard.KEY_UP)) {
+					tmpVec3f.z -= 0.1;
+				}
+				if (Keyboard.isKeyDown(Keyboard.KEY_DOWN)) {
+					tmpVec3f.z += 0.1;
+				}
+				if (Keyboard.isKeyDown(Keyboard.KEY_DELETE)) {
+					tmpVec3f.y -= 0.1;
+				}
+				if (Keyboard.isKeyDown(Keyboard.KEY_INSERT)) {
+					tmpVec3f.y += 0.1;
+				}
+				selected.setTransform(tmpVec3f, true, 0);
+			}
+		}
+    }
 	
 	public void run() throws Exception {
 		
 		Display.setDisplayMode(new DisplayMode(800, 400));
 		Display.setVSyncEnabled(true);
 		//Display.setFullscreen(true);
-		Display.setTitle("Rokua2013");
+		Display.setTitle("Test 2d render");
 		Display.create(new PixelFormat(), new ContextAttribs(4, 3).withProfileCore(true).withForwardCompatible(true));
 		Display.setResizable(true);
 
-		
 		System.out.println("OpenGL version: " + glGetString(GL_VERSION));
-
-		
-//		FloatBuffer vertexData = floatBuffer(
-//			-1.0f, -1.0f, 0.0f,
-//			 1.0f, -1.0f, 0.0f,
-//			 0.0f,  1.0f, 0.0f);
-//		
-//		int vertexbuffer = glGenBuffers();
-//		glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-//		glBufferData(GL_ARRAY_BUFFER, vertexData, GL_STATIC_DRAW);
-		
-		
-		// 0 1  2  3   4    5    6
-		// 1 4 16 64 256 1024 4096
-		
-		// glTexI
 		
         //Program glass = new Program("assets/shaders/glass/vertex.glsl", "assets/shaders/glass/geometry.glsl", "assets/shaders/glass/fragment.glsl");
         Program glass = new Program("assets/shaders/glass2");
@@ -286,9 +188,6 @@ public class Test3 {
         //Program glass = new Program("assets/shaders/glass/vertex.glsl", null, "assets/shaders/glass/fragment.glsl");
         Program background = new Program("assets/shaders/background");
         
-        // GLU.gluLookAt(eyex, eyey, eyez, centerx, cente§ry, centerz, upx, upy, upz);
-        Cube cube = new Cube(0.5f);
-        Sphere sphere = new Sphere(1, 4);
         Quad quad1 = new Quad(1);
         
         // TODO: specify background rect in projected space to 
@@ -296,15 +195,14 @@ public class Test3 {
         
 
 		View lightView = new View();
-		
-		
 		View camera = new View();
 		camera.translateView(0, 0, 2);
 		
         Lights lights = new Lights();
 		//view.translateView(40, 30, -50);
 		
-		
+        //glGetPr
+        
 		TextureCubeMap envCube = new TextureCubeMap("assets/images/env1");
         noise.bind(Uniform.U_ENV_CUBE, envCube);
 		background.bind(Uniform.U_ENV_CUBE, envCube);
@@ -328,103 +226,9 @@ public class Test3 {
         glDisable(GL_CULL_FACE);
 
 
-        // new parent object has independent animation (e.g. scroller)
-        
-        
-        // if b-spline (or other scripted) animation takes over, how to integrate with 
-        // current motion state (no discontinuities for v/p, possibly not even for a)
-        
-        // buffer of disabled objects
-        // re-use them
-        
-        // animate creation with a flash
-        
-        // free-fall
-        
-        // at some point, objects become part of larger object
-        // and are assigned positions inside it
-        
-        // animate current position to target using splines? or something else?
-        
-        
-        // cubes appear, tumble and fall under gravity, disappearw
-        // text steals these cubes
-        // text scrolls and after a while text cubes disappear
-        
-        
-        // animation effects (accelerate to distance, wobble, etc)
-        // chaining effects new Object(timeline)
-        // applying effects in bulk
-        
-		//Random rnd = new Random(2434);
 		
-		
-		// falling blocks are generated at fixed rate, so we
-		
-        for (int i = 0; i < N; i++) {
-        	Obj obj = om.new Obj(glass, sphere); //fbTransition(om.new Obj(glass, cube, farAway()));
-        	objects.add(obj);
-        	// objects in reserve will become fallingblocks after a while
-        }
         Obj selected = null;
-        	
-    	Obj lightMarker = om.new Obj(glass, sphere); //fbTransition(om.new Obj(glass, cube, farAway()));
 		
-        /*
-        	//Position p = new Position((rnd.nextFloat() - 0.5f)*20, (rnd.nextFloat() - 0.5f)*30, (rnd.nextFloat() - 0.5f)*20);
-        	//Rotation r = new Rotation((rnd.nextFloat() - 0.5f)*20, (rnd.nextFloat() - 0.5f)*30, (rnd.nextFloat() - 0.5f)*20, rnd.nextFloat());
-			//Vector3f vv = new Vector3f((rnd.nextFloat() - 0.5f)*20, (rnd.nextFloat() - 0.0f)*0.2f, (rnd.nextFloat() - 0.5f)*29);
-			
-        	//Velocity v = new Velocity(vv);
-        	//Acceleration a = new Acceleration(new Vector3f(0, -1, 0));
-        	// r, p, v, a
-        	// position_ip 
-        	// funcmatrix
-        	// combine effects in order
-			
-        	rnd(p0, 10);
-        	rnd(p1, 0);
-        	VectorPV pos = new VectorPV(ip, p0, v0, p1, v1);
-			
-			// sv.interpolate(p0, v0, p2, v2)
-        	
-        	final Object obj = om.new Object(glass, cube, new PosRot(pos, null)).set(Uniform.U_COLOR_MULT_F, ip.interpolate(1, 0, 1, 0));
-        	fallingBlocks.add(obj);
-        	
-        	obj.add(new ObjectManager.Event() {
-				@Override
-
-				public boolean update(double t, long time_ns) {
-					if (t > 5) {
-						Vector3f pos = obj.getPosition(time_ns);
-						Log.d("pos: "+pos);
-						obj.set(new Simple.Position(t, obj.getPosition(time_ns), new Vector3f(0, -2, 0)));
-						return true;
-					}
-					return false;
-				}
-			});
-        	
-        	// someone has to run event checks on objects?
-        	
-        }*/
-        
-        // things to demo:
-        //  instanced drawing 
-        //  reflection/refraction
-        //  animation control
-
-        // cubes flash to existence and start to drop
-        // at some point they smoothly become part of a letter which forms a traditional sine-scroller (or similar)
-        
-        // 
-        // how? 
-		// Object scroller = om.new Object(new Simple.Position(t, new Vector3f(0,0,0), new Vector3f(-5,0,0)));
-        
-        
-//    	float red = 0.9f;
-//    	float green = 0.2f;
-//    	float blue = 0.2f;
 
         long frame = 0;
     	final long initTime = System.nanoTime();
@@ -442,10 +246,8 @@ public class Test3 {
     	// some temp testing stuff
 //    	TODO: make proper sine scroller
 //    	      could also apply some functions to the target point (like y = base + sin(C*t*x))
-    	List<Binder> binders = new ArrayList<>();
+    	//List<Binder> binders = new ArrayList<>();
     	
-    	Vector3f tmp = new Vector3f();
-    	float scale = 0.005f;
 		while (!Display.isCloseRequested()) {
 
 			final long time_ns = frameStart - initTime;
@@ -455,109 +257,7 @@ public class Test3 {
 			// 2) perform user input checking and
 			//   calculate new state based on that and active animations/pseudo-physics
 			
-			int dx = Mouse.getDX();
-			int dy = Mouse.getDY();
-			if (dx != 0 || dy != 0) {
-				if (Mouse.isButtonDown(0)) {
-					camera.rotateView(dx*scale, dy*scale);
-				} else if (Mouse.isButtonDown(1)) {
-					camera.translateView(dx*scale, dy*scale, 0);
-				}
-			}
-			float step = 0.3f;
-			
-			//if (Keyboard.isKeyDown(Keyboard.KEY))
-			if (!Keyboard.isKeyDown(Keyboard.KEY_RSHIFT) && !Keyboard.isKeyDown(Keyboard.KEY_LSHIFT)) {
-				
-				if (Keyboard.isKeyDown(Keyboard.KEY_A)) {
-					camera.translateView(-step, 0, 0);
-				}
-				if (Keyboard.isKeyDown(Keyboard.KEY_D)) {
-					camera.translateView(step, 0, 0);
-				}
-				if (Keyboard.isKeyDown(Keyboard.KEY_W)) {
-					camera.translateView(0,  0, -step);
-				}
-				if (Keyboard.isKeyDown(Keyboard.KEY_S)) {
-					camera.translateView(0,  0, step);
-				}
-				if (selected != null) {
-					selected.getWorldPosition(tmp);
-					if (Keyboard.isKeyDown(Keyboard.KEY_LEFT)) {
-						tmp.x -= 0.1;
-					}
-					if (Keyboard.isKeyDown(Keyboard.KEY_RIGHT)) {
-						tmp.x += 0.1;
-					}
-					if (Keyboard.isKeyDown(Keyboard.KEY_UP)) {
-						tmp.z -= 0.1;
-					}
-					if (Keyboard.isKeyDown(Keyboard.KEY_DOWN)) {
-						tmp.z += 0.1;
-					}
-					if (Keyboard.isKeyDown(Keyboard.KEY_DELETE)) {
-						tmp.y -= 0.1;
-					}
-					if (Keyboard.isKeyDown(Keyboard.KEY_INSERT)) {
-						tmp.y += 0.1;
-					}
-					selected.setTransform(tmp, true, 0);
-				}
-				
-				
-				if (Keyboard.isKeyDown(Keyboard.KEY_Z)) {
-					for (Binder b : binders) {
-						b.getParent().getWorldTransform().rotate(0.4f, new Vector3f(0, 1, 0));
-					}
-					
-					//view.translateView(0,  0, step);
-				}
-				if (Keyboard.isKeyDown(Keyboard.KEY_X)) {
-					for (Binder b : binders) {
-						b.getParent().getWorldTransform().rotate(-0.4f, new Vector3f(0, 1, 0));
-					}
-					//view.translateView(0,  0, -step);
-				}
-			}
-			while (Keyboard.next()) {
-				final char ch = Keyboard.getEventCharacter();
-				boolean down = Keyboard.getEventKeyState();
-				Log.d("event char: "+ch+(down ? "DOWN" : "UP"));
-				
-				if (Character.isDigit(ch) && down) {
-					int i = Integer.parseInt(""+ch);
-					if (i >= 0 && i < objects.size()) {
-						selected = objects.get(i);
-						System.out.println("selected = "+selected);
-					} else {
-						selected = null;
-						System.out.println("selected = "+selected);
-					}
-				} else {
-					
-				}
-				
-				
-				
-				/*
-				if (!down || !(Character.isUpperCase(ch) || Character.isSpace(ch))) {
-					continue;
-				}
-				final double t0;
-				if (t >= nextCharMinTime) {
-					t0 = t;
-				} else {
-					t0 = nextCharMinTime;
-				}
-				nextCharMinTime = t0 + charInterval;
-
-				Binder b = createChar(ch, reserve);
-				binders.add(b);
-				controllers.add(b);
-				rnd(p0, 10);
-				b.getParent().setTransform(p0, true, 1); // TODO: proper control for parent (how to move character)
-				*/
-			}
+			move(camera, selected);
 			
 			
 	// prepare geometry for drawing
@@ -569,14 +269,13 @@ public class Test3 {
 	// move lights (TODO: these should be controlled just like geometry) 
 			lights.setWorldLight((float)(10*Math.sin(frame*0.01f)), 10, (float)(10*Math.cos(frame*0.01f)));
 			//lights.setWorldLight(-40, 0, 0);
-
-			
-			lightMarker.setTransform(lights.point_light_1, true, 0);
+			//lightMarker.setTransform(lights.point_light_1, true, 0);
 			std.bind(Uniform.U_TEXTURE_1, imgTexture);
 			
 
+	// copy data to texture
+	//
 
-			
 	// to use shadow map, shader needs:
 	// the shadow map depth texture, naturally
 	// transformation from world coordinates to depth texture (x,y,depth) for lookups
@@ -602,19 +301,18 @@ public class Test3 {
 			//glDisable(GL_DEPTH_TEST);
 			// TODO: we probably want to use cheapest possible shaders for shadow map generation...
 			buffers.draw(lightView, null, t);
+			
 			// what to do with frameBuffer?
 			// to test, render a quad that uses the resulting texture
 			//lightView.projection
 			//lightView.world_to_view
-			
 			//glass.bind(Uniform.U_SHADOW_MAP_1, frameBuffer.depth);
 			//glass.bind(Uniform.U_WORLD_TO_SHADOW_M4, lightView.world_to_projected);
-
 			
 			camera.setProjection(50, 0.1f, 100f, Display.getWidth(), Display.getHeight());
+			
 			glViewport(0, 0, Display.getWidth(), Display.getHeight());
 			FrameBuffer.setDefaultRenderTarget();
-
 
 			//std.bind(Uniform.U_TEXTURE_1, frameBuffer.color);
 			//std.bind(Uniform.U_SHADOW_MAP_1, frameBuffer.depth);
@@ -712,11 +410,5 @@ public class Test3 {
 		}
 		Display.destroy();
 	}
-
-	// view, look from X to Y
-	// 
-	
-	// draw with program
-	// 
 	
 }

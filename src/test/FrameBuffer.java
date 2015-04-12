@@ -22,10 +22,10 @@ import test.Textures.Texture;
 // (refactor to be more configurable when I know typical variations)
 public class FrameBuffer {
 
-	final int w,h;
-	final int frameBuffer;
-	final Texture color;
-	final Texture depth;
+	public final int w, h;
+	public final int frameBuffer;
+	public final Texture color;
+	public final Texture depth;
 
 	public static void setDefaultRenderTarget() {
 		

@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -38,8 +39,14 @@ import javax.imageio.ImageIO;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.EXTTextureFilterAnisotropic;
+import org.lwjgl.opengl.GL11;
+
+import com.carrotsearch.hppcrt.lists.IntArrayDeque;
 
 public class Textures {
+	
+	public static final int INVALID_TEXTURE_NAME = -1;
+	public static final int INVALID_TEXTURE_UNIT = 0;
 	
 //	private static final int[] TARGETS = {
 //			 GL_TEXTURE_1D, GL_TEXTURE_2D, GL_TEXTURE_3D,
@@ -51,8 +58,16 @@ public class Textures {
 //			 GL_TEXTURE_2D_MULTISAMPLE_ARRAY			
 //	};
 	
+	// 
+	
+	//static final ArrayDeque<E>
+	
+	// unit -> Texture
+	//static int numFreeTexUnits;
+	
 	private static List<Set<Integer>> usedTargets = new ArrayList<>();
 	
+/*
 	public static int allocTexUnitForTarget(int target) {
 		
 		for (int i = 0; i < usedTargets.size(); i++) {
@@ -78,7 +93,7 @@ public class Textures {
 		}
 		throw new IllegalArgumentException("No target "+target+" allocated in texture unit "+i);
 	}
-
+*/
 	
 	private static final int[] cube_map_side = {
 			GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
@@ -144,35 +159,91 @@ public class Textures {
     	// ByteBuffer textureBuffer = imageData.loadImage(new BufferedInputStream(is), false, null); // new int[]{}
     	}
     }
-
+    
 	public static class Texture {
 
-		private final int unit;
-		private final int target;
-		private final int name;
-		private final int filter = GL_NEAREST; //GL_LINEAR;
+		// for keeping track of available/used texture units
+		static final IntArrayDeque freeTexUnits;
+		static final ArrayDeque<Texture> boundTextures;
+		static {
+			int maxTexUnits = glGetInteger(GL_MAX_TEXTURE_IMAGE_UNITS);
+			Log.i("GL_MAX_TEXTURE_IMAGE_UNITS: %d", maxTexUnits);
+			freeTexUnits = new IntArrayDeque(maxTexUnits);
+			boundTextures = new ArrayDeque<>(maxTexUnits);
+			for (int i = 0; i < maxTexUnits; i++) {
+				freeTexUnits.add(GL_TEXTURE0 + i);
+			}
+		}
 
+		// allocate and activate texture unit and bind texture to the unit
+		private void bind() {
+			unit = freeTexUnits.isEmpty() ? boundTextures.removeFirst().takeUnit() : freeTexUnits.removeFirst();
+			boundTextures.add(this);
+			glActiveTexture(unit);
+			glBindTexture(target, name);
+		}
+		
+		// return the unit this texture is bound to and mark texture as having no unit
+		public int takeUnit() {
+			int tmp = unit;
+			unit = INVALID_TEXTURE_UNIT;
+			return tmp;
+		}
+
+		public void delete() {
+			
+			if (unit != INVALID_TEXTURE_UNIT) {
+				boundTextures.remove(this); // slow op
+				freeTexUnits.add(unit);
+				unit = INVALID_TEXTURE_UNIT;
+			}
+			glDeleteTextures(name);
+			name = INVALID_TEXTURE_NAME;
+			//freeTexUnitTarget(unit, target);
+		}
+
+		// make sure that texture is bound and return sampler index
 		public int getSampler() {
+			if (unit == INVALID_TEXTURE_UNIT) {
+				bind();
+ 			}
 			return unit - GL_TEXTURE0;
 		}
+		
+		private final int target;
+		private int name;
+		private final int filter = GL_LINEAR; // GL_NEAREST; //
+		private int unit;
+
 
 		public int getName() {
 			return name;
 		}
 		
-		public void delete() {
-			
-			glDeleteTextures(name);
-			freeTexUnitTarget(unit, target);
-		}
+		// NOTE! all textures that are used by same shader at the same time
+		// must be bound to different texture units
+		
+		// So allocating texture unit like I am doing right now is bound to fail
+		// (when two different kinds of textures map to same unit, which fails when trying to render)
+		// (possibly some problems earlier were because of this?)
+		// 
+		
+		// so textures should be rebound to units when we really want to use them... 
 
+		// bind texture initially,
+		// remember what is bound 
+		// only rebind if binding has been lost
+		// (due to tex unit pressure or reset (can this happen?))
+		
 		public Texture(int target) {
 
 			this.target = target;
-			unit = allocTexUnitForTarget(target);
-			glActiveTexture(unit);
 			name = glGenTextures();
-			glBindTexture(target, name);
+			bind();
+			
+//			unit = allocTexUnitForTarget(target);
+//			glActiveTexture(unit);
+//			glBindTexture(target, name);
 			glTexParameteri(target, GL_TEXTURE_MIN_FILTER, filter);
 			glTexParameteri(target, GL_TEXTURE_MAG_FILTER, filter);
 			
