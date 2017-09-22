@@ -1,0 +1,100 @@
+
+ - take lwjgl3 into use
+   - affects many things, like initialization, main loop
+   
+ - clean up code structure:
+   - move various functionalities to separate classes 
+   - important things that are used all the time and need to be really simple to use:
+     - program management
+     - texture management
+     - camera/view setup
+     - main loop, frame statistics
+     - basic object creation and rendering
+   - 
+
+ - things that are a bit unknown:
+   - how lighting should be integrated?
+     - basic similar to fixed-function?
+     - more advanced lighting algorithms?
+   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## OLDER STUFF, MOSTLY IGNORE NOW:
+ things that need some initial decisions before bindless rendering pipeline can be implemented:
+ - lighting model, light input?
+ - texture input?
+ - shadow rendering?
+ 
+ - can I just pick some simple assumption and hope that it won't be too difficult to modify later?
+   (e.g. number of lights, 
+ - what are the features for most complex shader initially:
+   - N lights (directional, spot, point)
+   - env map, bump map
+   - shadow (what approach?)
+   - 
+   
+ - what about deferred rendering? is it far too different to make any sense to think about in this context? 
+
+
+
+
+
+
+
+
+ there are several things that I could work on:
+ 
+ - basic rendering architecture/performance
+ 
+   - use bindless approach (require opengl 4.4 or 4.5?)
+     - simpler object setup?
+     
+     
+      
+ 
+   - cleanup of scene/object/material/shader management
+   - shader interface is difficult to pin down in a research project like this 
+   - reducing draw calls
+   - instancing, buffers
+ 
+ - animation architecture
+   - path animation
+   - vertex animation/morphing
+   - property animation
+ 
+ - physically-based shading
+   - bdrf
+   - transparency
+     - might require large changes to rendering approach    
+ 
+ - shadows
+   - refining current basic shadow-map approach
+   - new developments 
+   
+ - raytracing (or similar techniques)
+   - shader based (quite limited?)
+   - cpu based
+   - not much in common with current code?
+   
+   
+things that are fixed:
+- use of OpenGL 4.5?
+- use of GLSL 
+
