@@ -1,6 +1,7 @@
 package renderer;
 
-import static org.lwjgl.glfw.Callbacks.errorCallbackPrint;
+//import static org.lwjgl.glfw.GLFW.GLFW_TRUE;
+//import static org.lwjgl.glfw.GLFW.GLFW_FALSE;
 import static org.lwjgl.glfw.GLFW.GLFW_PRESS;
 import static org.lwjgl.glfw.GLFW.GLFW_RELEASE;
 import static org.lwjgl.glfw.GLFW.GLFW_RESIZABLE;
@@ -38,14 +39,15 @@ import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 
 import org.lwjgl.BufferUtils;
-import org.lwjgl.Sys;
+import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFWCursorPosCallback;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWKeyCallback;
 import org.lwjgl.glfw.GLFWMouseButtonCallback;
+import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.glfw.GLFWWindowSizeCallback;
-import org.lwjgl.glfw.GLFWvidmode;
-import org.lwjgl.opengl.GLContext;
+import org.lwjgl.glfw.GLFWVidMode;
+import org.lwjgl.opengl.GL;
 
 import com.carrotsearch.hppcrt.lists.LongArrayList;
 
@@ -114,6 +116,8 @@ public class SceneRunner {
 				@Override
 				public void invoke(long window, int key, int scancode, int action, int mods) {
 
+					System.out.println("KeyCallback");
+
 					if (listener != null) {
 						if (action == GLFW_PRESS) {
 							listener.keyDown(key);
@@ -171,7 +175,7 @@ public class SceneRunner {
 
 	public void run() throws Exception {
 
-		System.out.println("Hello LWJGL " + Sys.getVersion() + "!");
+		System.out.println("Hello LWJGL " + Version.getVersion() + "!");
 
 		try {
 			init();
@@ -183,7 +187,7 @@ public class SceneRunner {
 		} finally {
 			// Terminate GLFW and release the GLFWerrorfun
 			glfwTerminate();
-			errorCallback.release();
+			// errorCallback.release();
 		}
 	}
 
@@ -193,17 +197,20 @@ public class SceneRunner {
 	private void init() {
 		// Setup an error callback. The default implementation
 		// will print the error message in System.err.
-		glfwSetErrorCallback(errorCallback = errorCallbackPrint(System.err));
+
+		// Setup an error callback. The default implementation
+		// will print the error message in System.err.
+		GLFWErrorCallback.createPrint(System.err).set();
+
+		// glfwSetErrorCallback(errorCallback = GLFWErrorCallback.createPrint(System.err));
 
 		// Initialize GLFW. Most GLFW functions will not work before doing this.
-		if (glfwInit() != GL_TRUE)
+		if (!glfwInit())
 			throw new IllegalStateException("Unable to initialize GLFW");
 
 		// Configure our window
-		glfwDefaultWindowHints(); // optional, the current window hints are
-									// already the default
-		glfwWindowHint(GLFW_VISIBLE, GL_FALSE); // the window will stay hidden
-												// after creation
+		glfwDefaultWindowHints(); // optional, the current window hints are already the default
+		glfwWindowHint(GLFW_VISIBLE, GL_FALSE); // the window will stay hidden after creation
 		glfwWindowHint(GLFW_RESIZABLE, GL_TRUE); // the window will be resizable
 
 		// Create the window
@@ -219,10 +226,18 @@ public class SceneRunner {
 			}
 		});
 
+		// Setup a key callback. It will be called every time a key is pressed, repeated or released.
+		// glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
+		// if ( key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE )
+		// glfwSetWindowShouldClose(window, true); // We will detect this in our rendering loop
+		// });
+
 		// Setup a key callback. It will be called every time a key is pressed,
 		// repeated or released.
 
 		input = new GlfwInput(window);
+		
+		TODO: make something happen... basic functionality should be ok
 
 		// input.setListener(
 		// new Input.Listener() {
@@ -245,9 +260,9 @@ public class SceneRunner {
 		// });
 
 		// Get the resolution of the primary monitor
-		ByteBuffer vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+		GLFWVidMode vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 		// Center our window
-		glfwSetWindowPos(window, (GLFWvidmode.width(vidmode) - w) / 2, (GLFWvidmode.height(vidmode) - h) / 2);
+		glfwSetWindowPos(window, (vidmode.width() - w) / 2, (vidmode.height() - h) / 2);
 
 		// Make the OpenGL context current
 		glfwMakeContextCurrent(window);
@@ -266,7 +281,7 @@ public class SceneRunner {
 		// LWJGL detects the context that is current in the current thread,
 		// creates the ContextCapabilities instance and makes the OpenGL
 		// bindings available for use.
-		GLContext.createFromCurrent();
+		GL.createCapabilities(); // Context.createFromCurrent();
 
 		System.out.println("OpenGL version: " + glGetString(GL_VERSION));
 
@@ -283,7 +298,7 @@ public class SceneRunner {
 
 		// Run the rendering loop until the user has attempted to close
 		// the window or has pressed the ESCAPE key.
-		while (glfwWindowShouldClose(window) == GL_FALSE) {
+		while (!glfwWindowShouldClose(window)) {
 
 			final long time_ns = frameStart - initTime;
 			final double t = time_ns / 1000000000.0;
@@ -549,8 +564,8 @@ public class SceneRunner {
 	 * if (frames > 0) { long med = ((frames & 1) == 1) ? frameTimes.get((frames - 1) / 2) : (frameTimes.get(frames / 2)
 	 * + frameTimes.get(frames / 2 - 1)) / 2; Log.d(String.format(
 	 * "Last %.2f s frametime avg/med/min/max : %.1f/%.1f/%.1f/%.1f ms", d_ms / 1000, d_ms / frames, med / 1000000.0,
-	 * frameTimes.get(0) / 1000000.0, frameTimes.get(frames - 1) / 1000000.0)); } else {
-	 * Log.d(String.format("Last %.2f s no frames rendered", d_ms * 1000)); }
+	 * frameTimes.get(0) / 1000000.0, frameTimes.get(frames - 1) / 1000000.0)); } else { Log.d(String.format(
+	 * "Last %.2f s no frames rendered", d_ms * 1000)); }
 	 * 
 	 * prevPrintTime = time; // prevPrintFrame = frame; frameTimes.clear(); }
 	 * 

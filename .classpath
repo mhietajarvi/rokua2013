@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry excluding="test/CompositeRenderable.java|test/DrawableGeometry.java|test/ObjectManager.java|test/Test2.java|test/Test.java|test/Test2d.java|test/Test3.java|test/TheQuadExampleMoving.java|test/Textures.java|test/Program.java|test/Util.java|test/FrameBuffer.java|test/Acceleration.java|test/Animation.java|test/Attribute.java|test/Binder.java|test/Controller.java|test/Cube.java|test/Destroyable.java|test/Drawable.java|test/DrawableBase.java|test/Func.java|test/Geometry.java|test/ImageGen.java|test/Interpolator.java|test/Lights.java|test/Log.java|test/Matrix.java|test/ObjManager2.java|test/OldSphere.java|test/PointCloudFont.java|test/Position.java|test/PosRot.java|test/Quad.java|test/Rect.java|test/RokuaRenderer.java|test/Rotation.java|test/Sandbox.java|test/Simple.java|test/SimpleRenderable.java|test/SmoothVelocity.java|test/Sphere.java|test/TransformedRenderable.java|test/VectorPV.java|test/Velocity.java|test/VertexData.java|test/View.java" kind="src" path="src"/>
+	<classpathentry excluding="test/CompositeRenderable.java|test/DrawableGeometry.java|test/ObjectManager.java|test/Test2.java|test/Test.java|test/Test2d.java|test/Test3.java|test/TheQuadExampleMoving.java|test/Textures.java|test/Program.java|test/Util.java|test/FrameBuffer.java|test/Acceleration.java|test/Animation.java|test/Attribute.java|test/Binder.java|test/Controller.java|test/Cube.java|test/Destroyable.java|test/Drawable.java|test/DrawableBase.java|test/Func.java|test/Geometry.java|test/ImageGen.java|test/Interpolator.java|test/Lights.java|test/Log.java|test/Matrix.java|test/ObjManager2.java|test/OldSphere.java|test/PointCloudFont.java|test/Position.java|test/PosRot.java|test/Quad.java|test/Rect.java|test/RokuaRenderer.java|test/Rotation.java|test/Sandbox.java|test/Simple.java|test/SimpleRenderable.java|test/SmoothVelocity.java|test/Sphere.java|test/TransformedRenderable.java|test/VectorPV.java|test/Velocity.java|test/VertexData.java|test/View.java|renderer/vulkan/" kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
 	<classpathentry kind="lib" path="libs/PNGDecoder.jar"/>
 	<classpathentry kind="lib" path="libs/slick-util.jar" sourcepath="libs/src/java"/>
 	<classpathentry kind="lib" path="libs/hppcrt-0.6.8.jar" sourcepath="libs/hppcrt-0.6.8-sources.jar"/>
-	<classpathentry kind="lib" path="libs/lwjgl3/jar/lwjgl.jar" sourcepath="libs/lwjgl3/src.zip">
-		<attributes>
-			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="rokua2013/libs/lwjgl3/native/windows/x64"/>
-		</attributes>
-	</classpathentry>
+	<classpathentry kind="lib" path="lwjgl312/lwjgl-glfw.jar"/>
+	<classpathentry kind="lib" path="lwjgl312/lwjgl-opengl.jar"/>
+	<classpathentry kind="lib" path="lwjgl312/lwjgl.jar"/>
 	<classpathentry kind="lib" path="libs/lwjgl_util.jar"/>
+	<classpathentry kind="lib" path="lwjgl312/lwjgl-natives-windows.jar"/>
+	<classpathentry kind="lib" path="lwjgl312/lwjgl-glfw-natives-windows.jar"/>
+	<classpathentry kind="lib" path="lwjgl312/lwjgl-opengl-natives-windows.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

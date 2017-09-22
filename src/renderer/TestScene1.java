@@ -85,8 +85,8 @@ public class TestScene1 implements Scene, Input.Listener {
 	// view.translateView(40, 30, -50);
 	Input input;
 
-	@Override
-	public void init(Input input) throws Exception {
+	//@Override
+	public void init2(Input input) throws Exception {
 
 		this.input = input;
 		input.setListener(this);
@@ -114,8 +114,8 @@ public class TestScene1 implements Scene, Input.Listener {
 		// rect = new Rect(2, 1, -0.5f);
 	}
 
-	@Override
-	public void renderFrame(long frame, double t, int w, int h) {
+	//@Override
+	public void renderFrame2(long frame, double t, int w, int h) {
 
 		// glClearColor(0.1f, 0.1f, 1.0f, 0.0f);
 		// glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -144,8 +144,8 @@ public class TestScene1 implements Scene, Input.Listener {
 		// rect.draw();
 	}
 
-	// @Override
-	public void init2(Input input) throws Exception {
+	@Override
+	public void init(Input input) throws Exception {
 
 		envCube = new TextureCubeMap("assets/images/env1");
 		imgTexture = new Texture2D("assets/images/ash_uvgrid01.png");
@@ -205,7 +205,14 @@ public class TestScene1 implements Scene, Input.Listener {
 		glClearColor(0.1f, 0.1f, 1.0f, 0.0f);
 	}
 
-	public void renderFrame2(long frame, double t) {
+//	TODO: check what works, what needs to be cleaned up
+//	- program loading and binding?
+//	- light objects
+//	- instanced rendering
+	
+	
+	@Override
+	public void renderFrame(long frame, double t, int w, int h) {
 
 		// TODO Auto-generated method stub
 		// move(camera, selected);

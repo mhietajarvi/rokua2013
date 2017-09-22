@@ -317,7 +317,7 @@ public class Program {
 		int index = getIndex(u);
 		if (index != -1) {
 			useProgram();
-			glUniformMatrix4(index, false, buf);
+			glUniformMatrix4fv(index, false, buf);
 		}
 	}
 
@@ -333,7 +333,7 @@ public class Program {
 			}
 			buf.flip();
 			useProgram();
-			glUniformMatrix4(index, false, buf);
+			glUniformMatrix4fv(index, false, buf);
 		}
 	}
 
